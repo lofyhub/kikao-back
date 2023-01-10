@@ -16,10 +16,10 @@ jobs:
               uses: actions/setup-node@v1
               with:
                   node-version: ${{ matrix.node-version }}
-            - name: pnpm install, build, lint
+            - name: yarn install, build, lint
               run: |
-                  pnpm install
-                  pnpm run build
-                  pnpm run lint
+                  yarn install
+                  yarn run build
+                  yarn run lint
               env:
                   CI: true

@@ -3,7 +3,7 @@ import rateLimit, { Options } from 'express-rate-limit';
 import env from '../env';
 
 function rateLimiter(options: Partial<Options>) {
-    if (env.testMode) {
+    if (env.TEST_MODE) {
         return function (req: Request, res: Response, next: NextFunction) {
             return next();
         };

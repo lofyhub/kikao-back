@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { ObjectId } from 'mongodb';
 import mongoose from 'mongoose';
-import { connection } from '../config/db-config';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
 import { verifyToken } from '../utilities/helpers';
@@ -10,7 +9,6 @@ const router = Router();
 
 async function getListings(req: Request, res: Response, next: NextFunction) {
     try {
-        await connection;
         const collection = mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
         return res.status(200).json({ listings });
@@ -57,7 +55,6 @@ async function createUserListing(
     };
 
     try {
-        await connection;
         const collection = await mongoose.connection.db.collection('listing');
         const result = await collection.insertOne(listing);
 
@@ -111,8 +108,6 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        await connection;
-
         const collection = mongoose.connection.db.collection('listing');
         const result = await collection.updateOne(
             { _id: new ObjectId(_id) },
@@ -126,8 +121,7 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
         }
         return res.status(200).json({ result });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -141,21 +135,7 @@ router.get(
     getListings
 );
 router.post('/user/listings', verifyToken, createUserListing);
-router.delete(
-    '/user/listings',
-    rateLimiter({
-        windowMs: 1000,
-        max: 1
-    }),
-    deleteListing
-);
-router.put(
-    '/user/listings',
-    rateLimiter({
-        windowMs: 1000,
-        max: 1
-    }),
-    updateListing
-);
+router.put('/user/listings', verifyToken, updateListing);
+router.delete('/user/listings', verifyToken, deleteListing);
 
 export default router;

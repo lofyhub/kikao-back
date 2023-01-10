@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
+import fs from 'fs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Ipayload } from '../interfaces';
 
-const secretKey = 'kikao';
+const privateKey = fs.readFileSync('../../keys/private.pem', 'utf8');
+const publiceKey = fs.readFileSync('../../keys/public.pem', 'utf8');
 
 export async function hashPassword(password: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -31,8 +33,8 @@ export async function signToken(payload: Ipayload) {
     if (!payload) {
         return;
     }
-    return await jwt.sign(payload, secretKey, {
-        algorithm: 'HS256',
+    return await jwt.sign(payload, privateKey, {
+        algorithm: 'RS256',
         expiresIn: '8h'
     });
 }
@@ -46,9 +48,10 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        jwt.verify(token, secretKey, {
-            algorithms: ['HS256']
+        jwt.verify(token, publiceKey, {
+            algorithms: ['RS256']
         });
+
         return next();
     } catch (error) {
         return res.status(400).json({ auth: false, message: error });

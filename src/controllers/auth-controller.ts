@@ -97,13 +97,12 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             };
             const token = await signToken(payload);
 
-            if (isPasswordValid) {
-                return res.status(200).json({ auth: true, token: token });
-            } else {
-                return res
-                    .status(401)
-                    .json({ message: 'Incorrect email or password' });
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    message: 'Incorrect email or password'
+                });
             }
+            return res.status(200).json({ auth: true, token: token });
         } catch (error) {
             next(error);
             return;

@@ -66,13 +66,22 @@ async function createUserListing(
 }
 
 async function deleteListing(req: Request, res: Response, next: NextFunction) {
-    const _id = req.params.id;
-    // TODO: Enforce to ensure only the listing user can delete their listing and not anybody with their listing
-    // as of now, anybody with the listing ID can perform deletion
+    const { userId, _id } = req.body;
 
-    const collection = mongoose.connection.db.collection('listing');
+    const collection = await mongoose.connection.db.collection('listing');
+    const dbUser = await collection.findOne({ _id: new ObjectId(_id) });
+    // TODO: A better way to verify user deletion
+    if (dbUser?.id !== userId) {
+        return res.status(403).json({
+            message:
+                'Sorry, you are only able to delete listings that you have created'
+        });
+    }
+
     try {
-        const isDeleted = await collection.deleteOne({ _id });
+        const isDeleted = await collection.deleteOne({
+            _id: new ObjectId(_id)
+        });
 
         if (isDeleted.deletedCount === 0) {
             return res
@@ -89,13 +98,12 @@ async function deleteListing(req: Request, res: Response, next: NextFunction) {
 }
 
 async function updateListing(req: Request, res: Response, next: NextFunction) {
-    // TODO: Ensure that only listing user can edit their listing
-    // as of now anybody with the listing id can edit the listing
-    const { _id, name, id } = req.body;
+    const { _id, name, location, status, userId } = req.body;
 
     const updates = {
         name: name,
-        id: id
+        location: location,
+        status: status
     };
 
     if (!_id) {
@@ -105,6 +113,15 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
     // Don't proceed if there are no updates to make
     if (Object.keys(updates).length === 0) {
         return res.status(400).json({ message: 'No updates provided' });
+    }
+    const collection = await mongoose.connection.db.collection('listing');
+    const dbUser = await collection.findOne({ _id: new ObjectId(_id) });
+    // TODO: A better way to verify user deletion
+    if (dbUser?.id !== userId) {
+        return res.status(403).json({
+            message:
+                'Sorry, you are only able to edit listings that you have created'
+        });
     }
 
     try {

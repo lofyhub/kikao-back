@@ -92,7 +92,7 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
                 existingUser?.password
             );
             const payload: Ipayload = {
-                userId: existingUser?.username,
+                userId: existingUser?.id,
                 email: email
             };
             const token = await signToken(payload);

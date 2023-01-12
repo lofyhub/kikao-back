@@ -7,6 +7,7 @@ import env from './env';
 import helloWorld from './controllers/hello-world';
 import authController from './controllers/auth-controller';
 import listingsController from './controllers/listings-controller';
+import userController from './controllers/user-controller';
 import { debug } from './utilities/debug';
 
 /**
@@ -30,5 +31,6 @@ app.use(bodyParser());
 app.use(helloWorld);
 app.use(authController);
 app.use(listingsController);
+app.use(userController);
 
 export default app;

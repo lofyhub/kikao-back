@@ -22,7 +22,7 @@ mongoose.connect(uri, options);
 const router = Router();
 
 async function signUp(req: Request, res: Response, next: NextFunction) {
-    const { email, password, username } = req.body;
+    const { email, password, username, kikaotype } = req.body;
     const date = new Date();
 
     const isvalidEmail = regex.emailRegex.test(email);
@@ -40,6 +40,7 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
     const userItem: IUser = {
         username: username,
         email: email,
+        kikaoType: kikaotype,
         password: hashedPass,
         date: date
     };
@@ -102,7 +103,17 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
                     message: 'Incorrect email or password'
                 });
             }
-            return res.status(200).json({ auth: true, token: token });
+            // exclude sensitive data to send to client i.e hashedpassword
+            const user = {
+                _id: existingUser?._id,
+                username: existingUser?.username,
+                email: existingUser?.email,
+                regDate: existingUser?.date,
+                kikaotype: existingUser?.kikaotype
+            };
+            return res
+                .status(200)
+                .json({ auth: true, token: token, user: user });
         } catch (error) {
             next(error);
             return;

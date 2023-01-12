@@ -1,6 +1,7 @@
 export interface IUser {
     username: string;
     email: string;
+    kikaoType: string;
     password: string;
     date: Date;
 }

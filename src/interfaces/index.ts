@@ -9,6 +9,13 @@ export interface IRole {
     name: string;
 }
 
+export interface JwtPayload {
+    userId: string;
+    email: string;
+    iat: number;
+    exp: number;
+}
+
 export interface IDB extends IUser, IRole {
     user: IUser;
     mongoose: any;

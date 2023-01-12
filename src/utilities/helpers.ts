@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { Ipayload } from '../interfaces';
+import { Ipayload, JwtPayload } from '../interfaces';
 
 const privateKey = fs.readFileSync('../../keys/private.pem', 'utf8');
 const publiceKey = fs.readFileSync('../../keys/public.pem', 'utf8');
@@ -39,7 +39,11 @@ export async function signToken(payload: Ipayload) {
     });
 }
 
-export function verifyToken(req: Request, res: Response, next: NextFunction) {
+export async function verifyToken(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     const token = req.headers['x-access-token'] as string;
     if (!token) {
         return res
@@ -48,10 +52,10 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        jwt.verify(token, publiceKey, {
+        const decoded = (await jwt.verify(token, publiceKey, {
             algorithms: ['RS256']
-        });
-
+        })) as JwtPayload;
+        req.body.userId = decoded.userId;
         return next();
     } catch (error) {
         return res.status(400).json({ auth: false, message: error });

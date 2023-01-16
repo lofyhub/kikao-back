@@ -108,6 +108,7 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             // exclude sensitive data to send to client i.e hashedpassword
             const user = {
                 _id: existingUser?._id,
+                userId: existingUser?.userId,
                 username: existingUser?.username,
                 email: existingUser?.email,
                 regDate: existingUser?.date,

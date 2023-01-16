@@ -4,6 +4,7 @@ import sanitize from 'mongo-sanitize';
 
 import { verifyToken } from '../utilities/helpers';
 import { ObjectId } from 'mongodb';
+import { houseSchema } from '../interfaces';
 
 const router = Router();
 
@@ -52,7 +53,9 @@ async function getUserListings(req: Request, res: Response) {
 
     try {
         const collection = await mongoose.connection.db.collection('listing');
-        const userListings = await collection.find(query).toArray();
+        const userListings = await collection
+            .find<houseSchema>(query)
+            .toArray();
         const count = userListings.length;
 
         if (count === 0) {
@@ -71,7 +74,7 @@ async function getUserListings(req: Request, res: Response) {
 }
 
 // Routes
-router.post('/author/listing', verifyToken, getListingPublisher);
-router.get('/author/listings', verifyToken, getUserListings);
+router.post('/listing/author', verifyToken, getListingPublisher);
+router.post('/author/listings', verifyToken, getUserListings);
 
 export default router;

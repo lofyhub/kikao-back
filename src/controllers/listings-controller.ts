@@ -26,7 +26,6 @@ async function createUserListing(
 ) {
     const { Id, name, location, images, rate, compartments, size, status } =
         req.body;
-    console.log(Id);
 
     if (
         !name ||

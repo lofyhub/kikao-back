@@ -4,7 +4,7 @@ import { hashPassword, comparePassword } from '../utilities/helpers';
 import { rateLimit } from 'express-rate-limit';
 import { signToken } from '../utilities/helpers';
 import { Ipayload, IUser } from '../interfaces';
-
+import { nanoid } from 'nanoid';
 import regex from '../config/regex';
 
 const uri =
@@ -36,8 +36,10 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         return;
     }
     const hashedPass = await hashPassword(password);
+    const userId = nanoid();
 
     const userItem: IUser = {
+        userId: userId,
         username: username,
         email: email,
         kikaoType: kikaotype,

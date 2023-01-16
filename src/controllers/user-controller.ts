@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
+import sanitize from 'mongo-sanitize';
 
 import { verifyToken } from '../utilities/helpers';
 import { ObjectId } from 'mongodb';
@@ -37,7 +38,40 @@ async function getListingPublisher(req: Request, res: Response) {
     }
 }
 
+async function getUserListings(req: Request, res: Response) {
+    const { Id } = req.body;
+    if (!Id) {
+        return res.status(400).json({ message: 'Id is required!' });
+    }
+    // sanitize the user input
+    const id = sanitize(Id);
+
+    const query = {
+        userId: id
+    };
+
+    try {
+        const collection = await mongoose.connection.db.collection('listing');
+        const userListings = await collection.find(query).toArray();
+        const count = userListings.length;
+
+        if (count === 0) {
+            console.log('No documents found!');
+        }
+
+        return res
+            .status(200)
+            .json({ message: 'Successful', data: userListings, count });
+    } catch (error) {
+        console.log(error);
+        return res
+            .status(400)
+            .json({ message: 'Request was not successful', error: error });
+    }
+}
+
 // Routes
-router.get('/author/listing', verifyToken, getListingPublisher);
+router.post('/author/listing', verifyToken, getListingPublisher);
+router.get('/author/listings', verifyToken, getUserListings);
 
 export default router;

@@ -4,12 +4,13 @@ import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
 import { verifyToken } from '../utilities/helpers';
+import { nanoid } from 'nanoid';
 
 const router = Router();
 
 async function getListings(req: Request, res: Response, next: NextFunction) {
     try {
-        const collection = mongoose.connection.db.collection('listing');
+        const collection = await mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
         return res.status(200).json({ listings });
     } catch (error) {
@@ -23,13 +24,13 @@ async function createUserListing(
     res: Response,
     next: NextFunction
 ) {
-    const { id, name, location, images, rate, compartments, size, status } =
+    const { Id, name, location, images, rate, compartments, size, status } =
         req.body;
-    const timestamp = new Date();
+    console.log(Id);
 
     if (
-        !id ||
         !name ||
+        !Id ||
         !location ||
         !images ||
         !rate ||
@@ -42,8 +43,11 @@ async function createUserListing(
         });
     }
 
+    const listingId = nanoid();
+    const timestamp = new Date();
     const listing: houseSchema = {
-        id: id,
+        id: listingId,
+        userId: Id,
         name: name,
         location: location,
         images: images,
@@ -116,7 +120,7 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
     }
     const collection = await mongoose.connection.db.collection('listing');
     const dbUser = await collection.findOne({ _id: new ObjectId(_id) });
-    // TODO: A better way to verify user deletion
+    // TODO: A better way to verify the user updating the listing
     if (dbUser?.id !== userId) {
         return res.status(403).json({
             message:
@@ -151,8 +155,23 @@ router.get(
     }),
     getListings
 );
-router.post('/user/listings', verifyToken, createUserListing);
-router.put('/user/listings', verifyToken, updateListing);
-router.delete('/user/listings', verifyToken, deleteListing);
+router.post(
+    '/user/listings',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    verifyToken,
+    createUserListing
+);
+router.put(
+    '/user/listings',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    verifyToken,
+    updateListing
+);
+router.delete(
+    '/user/listings',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    verifyToken,
+    deleteListing
+);
 
 export default router;

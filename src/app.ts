@@ -23,7 +23,12 @@ const app = express();
 // Middlewares
 app.set('port', env.port);
 app.use(loggingMiddleware);
-app.use(cors());
+app.use(
+    cors({
+        origin: 'http://localhost:9001',
+        credentials: true
+    })
+);
 app.use(compression());
 app.use(bodyParser());
 

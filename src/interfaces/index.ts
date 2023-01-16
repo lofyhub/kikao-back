@@ -1,4 +1,5 @@
 export interface IUser {
+    userId: string;
     username: string;
     email: string;
     kikaoType: string;
@@ -24,7 +25,8 @@ export interface IDB extends IUser, IRole {
 }
 
 export interface houseSchema {
-    id: number;
+    id: string;
+    userId: string;
     name: string;
     location: string;
     images: string[];

@@ -69,13 +69,12 @@ async function createUserListing(
 }
 
 async function deleteListing(req: Request, res: Response, next: NextFunction) {
-    const { userId, _id } = req.body;
-
+    const { accountId, _id } = req.body;
     const collection = await mongoose.connection.db.collection('listing');
     const dbUser = await collection.findOne({ _id: new ObjectId(_id) });
     // TODO: A better way to verify user deletion
-    if (dbUser?.id !== userId) {
-        return res.status(403).json({
+    if (dbUser?.userId !== accountId) {
+        return res.status(401).json({
             message:
                 'Sorry, you are only able to delete listings that you have created'
         });

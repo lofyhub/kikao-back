@@ -26,6 +26,7 @@ app.use(loggingMiddleware);
 app.use(cors());
 app.use(compression());
 app.use(bodyParser());
+app.use('/uploads', express.static('uploads'));
 
 // Controllers
 app.use(helloWorld);

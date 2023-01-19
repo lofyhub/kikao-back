@@ -4,9 +4,38 @@ import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
 import { verifyToken } from '../utilities/helpers';
+import multer from 'multer';
 import { nanoid } from 'nanoid';
 
 const router = Router();
+const storage = multer.diskStorage({
+    destination: function (req: Request, file, cb) {
+        cb(null, './uploads/');
+    },
+    filename: function (req: Request, file, cb) {
+        cb(null, new Date().toISOString() + file.originalname);
+    }
+});
+
+const fileFilter = (
+    req: Request,
+    file: { mimetype: string },
+    cb: (arg0: null, arg1: boolean) => void
+) => {
+    // filter filetype to store
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
+});
 
 async function getListings(req: Request, res: Response, next: NextFunction) {
     try {
@@ -24,16 +53,30 @@ async function createUserListing(
     res: Response,
     next: NextFunction
 ) {
-    const { Id, name, location, images, rate, compartments, size, status } =
-        req.body;
-
+    const {
+        Id,
+        title,
+        location,
+        price,
+        duration,
+        bedrooms,
+        totalrooms,
+        washrooms,
+        parking,
+        size,
+        status
+    } = req.body;
+    const imgPath = req.file?.path as string;
     if (
-        !name ||
+        !title ||
         !Id ||
         !location ||
-        !images ||
-        !rate ||
-        !compartments ||
+        !price ||
+        !duration ||
+        !bedrooms ||
+        !totalrooms ||
+        !washrooms ||
+        !parking ||
         !size ||
         !status
     ) {
@@ -44,14 +87,24 @@ async function createUserListing(
 
     const listingId = nanoid();
     const timestamp = new Date();
+    // TODO: Better verification of what is sent by the user
     const listing: houseSchema = {
         id: listingId,
         userId: Id,
-        name: name,
+        name: title,
         location: location,
-        images: images,
-        rate: rate,
-        compartments: compartments,
+        images: [imgPath],
+        rate: {
+            price: price,
+            duration: duration,
+            countryCode: 'kshs'
+        },
+        compartments: {
+            bedrooms: bedrooms,
+            totalRooms: totalrooms,
+            washRooms: washrooms,
+            parking: parking
+        },
         size: size,
         createdAt: timestamp,
         status: status
@@ -157,6 +210,7 @@ router.post(
     '/user/listings',
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
+    upload.single('kikaoimage'),
     createUserListing
 );
 router.put(

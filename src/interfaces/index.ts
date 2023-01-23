@@ -5,6 +5,13 @@ export interface IUser {
     kikaoType: string;
     password: string;
     date: Date;
+    business: {
+        name: string;
+        location: string;
+        phone: string;
+        businessType: string;
+        city: string;
+    };
 }
 
 export interface IRole {

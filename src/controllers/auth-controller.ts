@@ -22,16 +22,24 @@ mongoose.connect(uri, options);
 const router = Router();
 
 async function signUp(req: Request, res: Response, next: NextFunction) {
-    const { email, password, username, kikaotype } = req.body;
+    const {
+        email,
+        password,
+        username,
+        kikaotype,
+        businesname,
+        location,
+        phone,
+        businessType,
+        city
+    } = req.body;
     const date = new Date();
 
     const isvalidEmail = regex.emailRegex.test(email);
-    const validPass = regex.passWord.test(password);
-    const validName = regex.userName.test(username);
 
-    if (!isvalidEmail || !validName || !validPass) {
+    if (!isvalidEmail) {
         res.status(400).json({
-            message: 'Your provided incorrect credentials'
+            message: 'Your provided an invalid email'
         });
         return;
     }
@@ -44,7 +52,14 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         email: email,
         kikaoType: kikaotype,
         password: hashedPass,
-        date: date
+        date: date,
+        business: {
+            name: businesname,
+            location: location,
+            phone: phone,
+            businessType: businessType,
+            city: city
+        }
     };
 
     try {

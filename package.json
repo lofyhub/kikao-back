@@ -1,9 +1,9 @@
 {
-    "name": "node-typescript-boilerplate",
+    "name": "kikao",
     "version": "1.0.0",
-    "description": "A boilerplate for a nodejs backend application written in Typescript",
+    "description": "Nodejs backend application written in Typescript",
     "main": "dist/server.js",
-    "author": "Christos Panagiotakopoulos <chrispanag@gmail.com>",
+    "author": "John Philip",
     "license": "MIT",
     "private": true,
     "scripts": {

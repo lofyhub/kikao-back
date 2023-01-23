@@ -1,11 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
+import path from 'path';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Ipayload, JwtPayload } from '../interfaces';
 
-const privateKey = fs.readFileSync('../../keys/private.pem', 'utf8');
-const publiceKey = fs.readFileSync('../../keys/public.pem', 'utf8');
+const privateKey = fs.readFileSync(
+    path.resolve('../../keys/private.pem', 'utf8')
+);
+const publiceKey = fs.readFileSync(
+    path.resolve('../../keys/public.pem', 'utf8')
+);
 
 export async function hashPassword(password: string): Promise<string> {
     return new Promise((resolve, reject) => {

@@ -95,17 +95,17 @@ async function createUserListing(
         location: location,
         images: [imgPath],
         rate: {
-            price: price,
+            price: JSON.parse(price),
             duration: duration,
             countryCode: 'kshs'
         },
         compartments: {
-            bedrooms: bedrooms,
-            totalRooms: totalrooms,
-            washRooms: washrooms,
-            parking: parking
+            bedrooms: JSON.parse(bedrooms),
+            totalRooms: JSON.parse(totalrooms),
+            washRooms: JSON.parse(washrooms),
+            parking: JSON.parse(parking)
         },
-        size: size,
+        size: JSON.parse(size),
         createdAt: timestamp,
         status: status
     };

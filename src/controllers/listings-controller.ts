@@ -8,14 +8,7 @@ import multer from 'multer';
 import { nanoid } from 'nanoid';
 
 const router = Router();
-const storage = multer.diskStorage({
-    destination: function (req: Request, file, cb) {
-        cb(null, './uploads/');
-    },
-    filename: function (req: Request, file, cb) {
-        cb(null, new Date().toISOString() + file.originalname);
-    }
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (
     req: Request,
@@ -23,30 +16,24 @@ const fileFilter = (
     cb: (arg0: null, arg1: boolean) => void
 ) => {
     // filter filetype to store
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    if (
+        file.mimetype == 'image/png' ||
+        file.mimetype == 'image/jpg' ||
+        file.mimetype == 'image/jpeg'
+    ) {
         cb(null, true);
     } else {
         cb(null, false);
     }
 };
-const upload = multer({
+const multi_upload = multer({
     storage: storage,
     limits: {
-        fileSize: 1024 * 1024 * 5
+        // 1MB
+        fileSize: 1024 * 1024 * 1
     },
     fileFilter: fileFilter
 });
-
-async function getListings(req: Request, res: Response, next: NextFunction) {
-    try {
-        const collection = await mongoose.connection.db.collection('listing');
-        const listings = await collection.find({}).toArray();
-        return res.status(200).json({ listings });
-    } catch (error) {
-        next(error);
-        return;
-    }
-}
 
 async function createUserListing(
     req: Request,
@@ -66,7 +53,6 @@ async function createUserListing(
         size,
         status
     } = req.body;
-    const imgPath = req.file?.path as string;
     if (
         !title ||
         !Id ||
@@ -85,6 +71,22 @@ async function createUserListing(
         });
     }
 
+    let images: any[] = [];
+    // create an array of image upload promises
+    if (req.files) {
+        images = (req.files as Array<any>).map((file: any) => {
+            return {
+                file: {
+                    data: file.buffer,
+                    contentType: file.mimetype
+                },
+                fileName: Date.now() + file.originalname.toLowerCase()
+            };
+        });
+    }
+    // use Promise.all to wait for all the image uploads to complete
+    const imageUploadPromises = await Promise.all(images);
+    console.log(imageUploadPromises);
     const listingId = nanoid();
     const timestamp = new Date();
     // TODO: Better verification of what is sent by the user
@@ -93,7 +95,7 @@ async function createUserListing(
         userId: Id,
         name: title,
         location: location,
-        images: [imgPath],
+        images: imageUploadPromises,
         rate: {
             price: JSON.parse(price),
             duration: duration,
@@ -105,7 +107,7 @@ async function createUserListing(
             washRooms: JSON.parse(washrooms),
             parking: JSON.parse(parking)
         },
-        size: JSON.parse(size),
+        size: size,
         createdAt: timestamp,
         status: status
     };
@@ -196,6 +198,16 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
         return next(error);
     }
 }
+async function getListings(req: Request, res: Response, next: NextFunction) {
+    try {
+        const collection = await mongoose.connection.db.collection('listing');
+        const listings = await collection.find({}).toArray();
+        return res.status(200).json({ listings });
+    } catch (error) {
+        next(error);
+        return;
+    }
+}
 
 // Routes
 router.get(
@@ -210,7 +222,7 @@ router.post(
     '/user/listings',
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
-    upload.single('kikaoimage'),
+    multi_upload.array('kikaoimage', 4),
     createUserListing
 );
 router.put(

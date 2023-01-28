@@ -4,7 +4,6 @@ import { json as bodyParser } from 'body-parser';
 import compression from 'compression'; // compresses requests
 
 import env from './env';
-import helloWorld from './controllers/hello-world';
 import authController from './controllers/auth-controller';
 import listingsController from './controllers/listings-controller';
 import userController from './controllers/user-controller';
@@ -29,7 +28,6 @@ app.use(bodyParser());
 app.use('/uploads', express.static('uploads'));
 
 // Controllers
-app.use(helloWorld);
 app.use(authController);
 app.use(listingsController);
 app.use(userController);

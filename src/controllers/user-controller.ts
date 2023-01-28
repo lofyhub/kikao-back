@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
 
 import { verifyToken } from '../utilities/helpers';
-import { ObjectId } from 'mongodb';
 import { houseSchema } from '../interfaces';
 
 const router = Router();
@@ -17,7 +16,7 @@ async function getListingPublisher(req: Request, res: Response) {
     try {
         const collection = await mongoose.connection.db.collection('kikao');
         const existingUser = await collection.findOne({
-            _id: new ObjectId(_id)
+            userId: _id
         });
         // exclude sensitive data to send to client i.e hashedpassword - decide later on safety of emails
         if (!existingUser) {

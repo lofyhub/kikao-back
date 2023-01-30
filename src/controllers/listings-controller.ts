@@ -133,6 +133,7 @@ async function deleteListing(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
+        const collection = await mongoose.connection.db.collection('listing');
         const isDeleted = await collection.deleteOne({
             _id: new ObjectId(_id)
         });

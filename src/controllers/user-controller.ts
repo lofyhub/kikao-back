@@ -90,6 +90,13 @@ async function addFavourite(req: Request, res: Response, next: NextFunction) {
             newBookmarks = [Id];
             await collection.insertOne({ userId, bookmarks: newBookmarks });
         } else {
+            for (const book of bookmarkUser.bookmarks) {
+                if (book === Id) {
+                    return res.status(403).json({
+                        message: 'Listing already added as Bookmark'
+                    });
+                }
+            }
             newBookmarks = [...bookmarkUser.bookmarks, Id];
             const { modifiedCount } = await collection.updateOne(
                 { userId },
@@ -127,10 +134,43 @@ async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+async function deleteBookmark(req: Request, res: Response, next: NextFunction) {
+    const { userid, Id } = req.body;
+    const collection = await mongoose.connection.db.collection('bookmarks');
+    const dbUser = await collection.findOne({ userId: userid });
+    let bookmarks;
+    if (dbUser) {
+        bookmarks = dbUser.bookmarks;
+    }
+    try {
+        // TODO: Handle scenario where bookmarkId is not in the bookmarks.
+        const newBookmarks = bookmarks.filter((item: string) => item !== Id);
+        const updates = {
+            bookmarks: newBookmarks
+        };
+        const isDeleted = await collection.updateOne(
+            { userId: userid },
+            { $set: updates }
+        );
+        if (isDeleted.modifiedCount === 0) {
+            return res
+                .status(309)
+                .json({ message: 'Bookmark was not successful, Id not found' });
+        }
+        return res
+            .status(200)
+            .json({ message: 'Successfully removed listing from bookmarks' });
+    } catch (error: unknown) {
+        next(error);
+        return;
+    }
+}
+
 // Routes
 router.post('/listing/author', verifyToken, getListingPublisher);
 router.post('/author/listings', verifyToken, getUserListings);
 router.post('/bookmarks', verifyToken, addFavourite);
 router.post('/user/bookmarks', verifyToken, fetchBookmarks);
+router.post('/delete/bookmarks', verifyToken, deleteBookmark);
 
 export default router;

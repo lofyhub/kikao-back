@@ -179,7 +179,6 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        const collection = mongoose.connection.db.collection('listing');
         const result = await collection.updateOne(
             { _id: new ObjectId(_id) },
             { $set: updates }
@@ -207,14 +206,7 @@ async function getListings(req: Request, res: Response, next: NextFunction) {
 }
 
 // Routes
-router.get(
-    '/listings',
-    rateLimiter({
-        windowMs: 1000,
-        max: 1
-    }),
-    getListings
-);
+router.get('/listings', getListings);
 router.post(
     '/user/listings',
     rateLimiter({ windowMs: 1000, max: 1 }),

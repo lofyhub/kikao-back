@@ -51,7 +51,8 @@ async function createUserListing(
         washrooms,
         parking,
         size,
-        status
+        status,
+        county
     } = req.body;
     if (
         !title ||
@@ -64,7 +65,8 @@ async function createUserListing(
         !washrooms ||
         !parking ||
         !size ||
-        !status
+        !status ||
+        !county
     ) {
         return res.status(400).json({
             message: 'Your provided incorrect credentials'
@@ -92,6 +94,7 @@ async function createUserListing(
         userId: Id,
         name: title,
         location: location,
+        county: county,
         images: imageUploadPromises,
         rate: {
             price: JSON.parse(price),

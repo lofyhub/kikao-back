@@ -119,7 +119,7 @@ async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
     }
     try {
         const collection = await mongoose.connection.db.collection('bookmarks');
-        const bookmarks = await collection.find({ userId });
+        const bookmarks = await collection.find({ userId }).toArray();
         return res.status(200).json({ bookmarks });
     } catch (error) {
         next(error);

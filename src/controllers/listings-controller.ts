@@ -70,7 +70,6 @@ async function createUserListing(
             message: 'Your provided incorrect credentials'
         });
     }
-    console.log(req.files);
     let images: any[] = [];
     // create an array of image upload promises
     if (req.files) {

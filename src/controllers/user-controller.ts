@@ -112,7 +112,7 @@ async function addFavourite(req: Request, res: Response, next: NextFunction) {
 }
 
 async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
-    const { userid } = req.query;
+    const { userid } = req.body;
     const userId: string = userid as string;
     if (!userId) {
         return res.status(309).json({ message: 'userId is required' });
@@ -131,6 +131,6 @@ async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
 router.post('/listing/author', verifyToken, getListingPublisher);
 router.post('/author/listings', verifyToken, getUserListings);
 router.post('/bookmarks', verifyToken, addFavourite);
-router.get('/user/bookmarks', verifyToken, fetchBookmarks);
+router.post('/user/bookmarks', verifyToken, fetchBookmarks);
 
 export default router;

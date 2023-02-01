@@ -85,7 +85,6 @@ async function createUserListing(
     }
     // use Promise.all to wait for all the image uploads to complete
     const imageUploadPromises = await Promise.all(images);
-    console.log(imageUploadPromises);
     const listingId = nanoid();
     const timestamp = new Date();
     // TODO: Better verification of what is sent by the user

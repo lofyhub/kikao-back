@@ -1,11 +1,9 @@
-import { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { Ipayload, JwtPayload } from '../interfaces';
+import { Ipayload } from '../interfaces';
 import env from '../env';
 
 const privateKey = Buffer.from(env.PRIVATE_KEY, 'base64').toString('utf8');
-const publiceKey = Buffer.from(env.PUBLIC_KEY, 'base64').toString('utf8');
 
 export async function hashPassword(password: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -24,40 +22,16 @@ export async function comparePassword(
     encryptedPassword: string
 ): Promise<boolean> {
     const decryptedPasswordHex = await hashPassword(password);
-
-    // Compare the decrypted password with the original encrypted password
     return decryptedPasswordHex === encryptedPassword;
 }
 
-export async function signToken(payload: Ipayload) {
+export async function signToken(payload: Ipayload): Promise<string> {
     if (!payload) {
-        return;
+        throw new Error('Paylod is required');
     }
-    return await jwt.sign(payload, privateKey, {
+    const signedJwt = await jwt.sign(payload, privateKey, {
         algorithm: 'RS256',
         expiresIn: '8h'
     });
-}
-
-export async function verifyToken(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
-    const token = req.headers['x-access-token'] as string;
-    if (!token) {
-        return res
-            .status(401)
-            .send({ auth: false, message: 'No token provided.' });
-    }
-
-    try {
-        const decoded = (await jwt.verify(token, publiceKey, {
-            algorithms: ['RS256']
-        })) as JwtPayload;
-        req.body.userId = decoded.userId;
-        return next();
-    } catch (error) {
-        return res.status(400).json({ auth: false, message: error });
-    }
+    return signedJwt;
 }

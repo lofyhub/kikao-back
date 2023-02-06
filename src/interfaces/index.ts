@@ -69,3 +69,12 @@ export interface Ipayload {
 export interface ExtendedHouseSchema extends houseSchema {
     _id: string;
 }
+export interface booking {
+    bookedBy: string;
+    bookedListing: string;
+    bookingFor: string;
+    telephoneNumber: number;
+    selectedDate: string;
+    selectTime: string;
+    bookedById: string;
+}

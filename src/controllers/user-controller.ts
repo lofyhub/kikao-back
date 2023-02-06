@@ -2,48 +2,65 @@ import { NextFunction, Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
 
-import { verifyToken } from '../utilities/helpers';
+import { verifyToken } from '../middlewares/verifyToken';
 import { houseSchema } from '../interfaces';
 
 const router = Router();
 
-async function getListingPublisher(req: Request, res: Response) {
+async function getListingPublisher(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     const { _id } = req.body;
     if (!_id) {
-        return res.status(403).json({ mesage: 'Id is required' });
+        res.status(403).json({ mesage: 'Id is required' });
+        return;
     }
 
+    if (typeof _id !== 'string') {
+        throw new Error('Id should be a string');
+    }
     try {
         const collection = await mongoose.connection.db.collection('kikao');
         const existingUser = await collection.findOne({
             userId: _id
         });
+
         // exclude sensitive data to send to client i.e hashedpassword - decide later on safety of emails
         if (!existingUser) {
-            return res.status(300).json({
+            res.status(300).json({
                 message: 'Listing author with the given ID was not found'
             });
+            return;
         }
         const user = {
             _id: existingUser?._id,
             username: existingUser?.username,
+            userId: existingUser?.userId,
             email: existingUser?.email,
             regDate: existingUser?.date,
             kikaoType: existingUser?.kikaoType
         };
 
-        return res.status(200).json({ message: 'Successful', data: user });
+        res.status(200).json({ message: 'Successful', data: user });
+        return;
     } catch (error) {
-        return res.status(400).json({ message: 'Request was not successful' });
+        next(error);
+        return;
     }
 }
 
-async function getUserListings(req: Request, res: Response) {
+async function getUserListings(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     const { Id } = req.body;
     if (!Id) {
-        return res.status(400).json({ message: 'Id is required!' });
+        res.status(400).json({ message: 'Id is required!' });
+        return;
     }
-    // sanitize the user input
     const id = sanitize(Id);
 
     const query = {
@@ -56,32 +73,27 @@ async function getUserListings(req: Request, res: Response) {
             .find<houseSchema>(query)
             .toArray();
         const count = userListings.length;
-
-        if (count === 0) {
-            console.log('No documents found!');
-        }
-
-        return res
-            .status(200)
-            .json({ message: 'Successful', data: userListings, count });
+        res.status(200).json({
+            message: 'Successful',
+            data: userListings,
+            count
+        });
+        return;
     } catch (error) {
-        console.log(error);
-        return res
-            .status(400)
-            .json({ message: 'Request was not successful', error: error });
+        next(error);
+        return;
     }
 }
 
 async function addFavourite(req: Request, res: Response, next: NextFunction) {
-    try {
-        const { Id, userid } = req.body;
-        const userId = userid;
-        if (!Id || !userId) {
-            return res
-                .status(309)
-                .json({ message: 'Id and userId are required' });
-        }
+    const { Id, userid } = req.body;
+    const userId = userid;
+    if (!Id || !userId) {
+        res.status(309).json({ message: 'Id and userId are required' });
+        return;
+    }
 
+    try {
         const collection = await mongoose.connection.db.collection('bookmarks');
         const bookmarkUser = await collection.findOne({ userId });
 
@@ -89,29 +101,30 @@ async function addFavourite(req: Request, res: Response, next: NextFunction) {
         if (!bookmarkUser) {
             newBookmarks = [Id];
             await collection.insertOne({ userId, bookmarks: newBookmarks });
-        } else {
-            for (const book of bookmarkUser.bookmarks) {
-                if (book === Id) {
-                    return res.status(403).json({
-                        message: 'Listing already added as Bookmark'
-                    });
-                }
-            }
-            newBookmarks = [...bookmarkUser.bookmarks, Id];
-            const { modifiedCount } = await collection.updateOne(
-                { userId },
-                { $set: { bookmarks: newBookmarks } }
-            );
-            if (!modifiedCount) {
-                return res
-                    .status(404)
-                    .json({ message: 'Bookmark update was not successful' });
+            return;
+        }
+        for (const bookmark of bookmarkUser.bookmarks) {
+            if (bookmark === Id) {
+                res.status(403).json({
+                    message: 'Listing already added as Bookmark'
+                });
+                return;
             }
         }
+        newBookmarks = [...bookmarkUser.bookmarks, Id];
+        const { modifiedCount } = await collection.updateOne(
+            { userId },
+            { $set: { bookmarks: newBookmarks } }
+        );
+        if (!modifiedCount) {
+            res.status(404).json({
+                message: 'Bookmark update was not successful'
+            });
+            return;
+        }
 
-        return res
-            .status(200)
-            .json({ message: 'Bookmark request was successful' });
+        res.status(200).json({ message: 'Bookmark request was successful' });
+        return;
     } catch (error) {
         next(error);
         return;
@@ -120,14 +133,19 @@ async function addFavourite(req: Request, res: Response, next: NextFunction) {
 
 async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
     const { userid } = req.body;
-    const userId: string = userid as string;
-    if (!userId) {
-        return res.status(309).json({ message: 'userId is required' });
+    if (!userid) {
+        res.status(309).json({ message: 'userId is required' });
+        return;
     }
+    if (typeof userid !== 'string') {
+        throw new Error('Userid should be a string');
+    }
+    const userId: string = userid;
     try {
         const collection = await mongoose.connection.db.collection('bookmarks');
         const bookmarks = await collection.find({ userId }).toArray();
-        return res.status(200).json({ bookmarks });
+        res.status(200).json({ bookmarks });
+        return;
     } catch (error) {
         next(error);
         return;
@@ -136,6 +154,10 @@ async function fetchBookmarks(req: Request, res: Response, next: NextFunction) {
 
 async function deleteBookmark(req: Request, res: Response, next: NextFunction) {
     const { userid, Id } = req.body;
+    if (!userid || !Id) {
+        res.status(400).json({ message: 'UserId and Id are required' });
+        return;
+    }
     const collection = await mongoose.connection.db.collection('bookmarks');
     const dbUser = await collection.findOne({ userId: userid });
     let bookmarks;
@@ -148,19 +170,21 @@ async function deleteBookmark(req: Request, res: Response, next: NextFunction) {
         const updates = {
             bookmarks: newBookmarks
         };
-        const isDeleted = await collection.updateOne(
+        const isUpdated = await collection.updateOne(
             { userId: userid },
             { $set: updates }
         );
-        if (isDeleted.modifiedCount === 0) {
-            return res
-                .status(309)
-                .json({ message: 'Bookmark was not successful, Id not found' });
+        if (isUpdated.modifiedCount === 0) {
+            res.status(309).json({
+                message: 'Bookmark was not successful'
+            });
+            return;
         }
-        return res
-            .status(200)
-            .json({ message: 'Successfully removed listing from bookmarks' });
-    } catch (error: unknown) {
+        res.status(200).json({
+            message: 'Successfully removed listing from your bookmarks'
+        });
+        return;
+    } catch (error) {
         next(error);
         return;
     }

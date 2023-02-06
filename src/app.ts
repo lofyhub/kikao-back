@@ -7,6 +7,7 @@ import env from './env';
 import authController from './controllers/auth-controller';
 import listingsController from './controllers/listings-controller';
 import userController from './controllers/user-controller';
+import bookingController from './controllers/bookings';
 import { debug } from './utilities/debug';
 
 /**
@@ -31,5 +32,6 @@ app.use('/uploads', express.static('uploads'));
 app.use(authController);
 app.use(listingsController);
 app.use(userController);
+app.use(bookingController);
 
 export default app;

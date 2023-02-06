@@ -33,16 +33,16 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         businessType,
         city
     } = req.body;
-    const date = new Date();
 
     const isvalidEmail = regex.emailRegex.test(email);
 
     if (!isvalidEmail) {
         res.status(400).json({
-            message: 'Your provided an invalid email'
+            message: 'Invalid email address'
         });
         return;
     }
+    const date = new Date();
     const hashedPass = await hashPassword(password);
     const userId = nanoid();
 
@@ -63,26 +63,25 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
     };
 
     try {
-        const collection = mongoose.connection.db.collection('kikao');
+        const collection = await mongoose.connection.db.collection('kikao');
         const existingUser = await collection.findOne({ email: email });
 
         if (existingUser) {
             res.status(400).json({
                 message: 'Email is already registered'
             });
-        } else {
-            collection
-                .insertOne(userItem)
-                .then((result) => {
-                    console.log('Successfully saved new user to the database');
-                    res.status(200).json({ result });
-                })
-                .catch((error) => {
-                    res.status(400).json({
-                        'Error saving new user to the database:': error
-                    });
-                });
+            return;
         }
+        const isSaved = await collection.insertOne(userItem);
+
+        if (!isSaved.acknowledged) {
+            res.status(400).json({
+                message: 'Error saving new user to the database:'
+            });
+            return;
+        }
+        res.status(200).json({ isSaved });
+        return;
     } catch (error) {
         next(error);
         return;
@@ -92,15 +91,14 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
 async function signIn(req: Request, res: Response, next: NextFunction) {
     const { email, password } = req.body;
 
-    const validEmail = regex.emailRegex.test(email);
+    const isValidEmail = regex.emailRegex.test(email);
 
     if (!email || !password) {
-        return res
-            .status(400)
-            .json({ message: 'Email and password are required' });
+        res.status(400).json({ message: 'Email and password required' });
+        return;
     }
 
-    if (validEmail) {
+    if (isValidEmail) {
         try {
             const collection = await mongoose.connection.db.collection('kikao');
             const existingUser = await collection.findOne({ email: email });
@@ -116,9 +114,10 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             const token = await signToken(payload);
 
             if (!isPasswordValid) {
-                return res.status(401).json({
-                    message: 'Incorrect email or password'
+                res.status(401).json({
+                    message: 'Incorrect password'
                 });
+                return;
             }
             // exclude sensitive data to send to client i.e hashedpassword
             const user = {
@@ -129,18 +128,18 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
                 regDate: existingUser?.date,
                 kikaotype: existingUser?.kikaotype
             };
-            return res
-                .status(200)
-                .json({ auth: true, token: token, user: user });
+            res.status(200).json({ auth: true, token: token, user: user });
+            return;
         } catch (error) {
             next(error);
             return;
         }
     }
 
-    return res
-        .status(500)
-        .json({ message: 'Email and password provided is not valid' });
+    res.status(500).json({
+        message: 'Email or password provided is invalid'
+    });
+    return;
 }
 // Routes
 

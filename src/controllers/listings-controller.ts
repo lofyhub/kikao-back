@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
-import { verifyToken } from '../utilities/helpers';
+import { verifyToken } from '../middlewares/verifyToken';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
 
@@ -68,9 +68,10 @@ async function createUserListing(
         !status ||
         !county
     ) {
-        return res.status(400).json({
+        res.status(400).json({
             message: 'Your provided incorrect credentials'
         });
+        return;
     }
     let images: any[] = [];
     // create an array of image upload promises
@@ -83,7 +84,7 @@ async function createUserListing(
             };
         });
     }
-    // use Promise.all to wait for all the image uploads to complete
+    // wait for all the image uploads to complete
     const imageUploadPromises = await Promise.all(images);
     const listingId = nanoid();
     const timestamp = new Date();

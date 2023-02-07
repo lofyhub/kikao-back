@@ -127,7 +127,7 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             username: existingUser.username,
             email: existingUser.email,
             regDate: existingUser.date,
-            kikaotype: existingUser.kikaotype,
+            kikaotype: existingUser.kikaoType,
             telNumber: existingUser.phone
         };
         return res

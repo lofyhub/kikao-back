@@ -5,8 +5,7 @@ import { rateLimit } from 'express-rate-limit';
 import { signToken } from '../utilities/helpers';
 import { Ipayload, IUser } from '../interfaces';
 import { nanoid } from 'nanoid';
-import regex from '../config/regex';
-
+import { check, validationResult } from 'express-validator';
 const uri =
     'mongodb+srv://kikao:9zmZyT0ZMcTActQV@kikao.vsuckcx.mongodb.net/?retryWrites=true&w=majority';
 
@@ -22,6 +21,11 @@ mongoose.connect(uri, options);
 const router = Router();
 
 async function signUp(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(422).json({ message: errors.array() });
+        return;
+    }
     const {
         email,
         password,
@@ -34,16 +38,9 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         city
     } = req.body;
 
-    const isvalidEmail = regex.emailRegex.test(email);
-
-    if (!isvalidEmail) {
-        res.status(400).json({
-            message: 'Invalid email address'
-        });
-        return;
-    }
     const date = new Date();
     const hashedPass = await hashPassword(password);
+    //TODO: not sure if we should hash the phone number too, what's you think 🤔 ?
     const userId = nanoid();
 
     const userItem: IUser = {
@@ -53,93 +50,93 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         kikaoType: kikaotype,
         password: hashedPass,
         date: date,
+        phone: phone,
         business: {
-            name: businesname,
-            location: location,
-            phone: phone,
-            businessType: businessType,
-            city: city
+            name: !businesname ? username : businesname,
+            location: !location ? '' : location,
+            businessType: !businessType ? '' : kikaotype,
+            city: !city ? '' : city
         }
     };
 
     try {
         const collection = await mongoose.connection.db.collection('kikao');
-        const existingUser = await collection.findOne({ email: email });
+        const existingUserByEmail = await collection.findOne({ email: email });
+        const existingUserByPhone = await collection.findOne({ phone: phone });
 
-        if (existingUser) {
-            res.status(400).json({
+        if (existingUserByEmail) {
+            return res.status(400).json({
                 message: 'Email is already registered'
             });
-            return;
         }
-        const isSaved = await collection.insertOne(userItem);
 
-        if (!isSaved.acknowledged) {
-            res.status(400).json({
-                message: 'Error saving new user to the database:'
+        if (existingUserByPhone) {
+            return res.status(400).json({
+                message: 'Phone number is already registered'
             });
-            return;
         }
-        res.status(200).json({ isSaved });
-        return;
+        const result = await collection.insertOne(userItem);
+        console.log(result);
+        if (!result.acknowledged) {
+            return res.status(400).json({
+                message: 'Error saving new user to the database'
+            });
+        }
+
+        return res.status(200).json({ message: 'Sign up is successful' });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
 async function signIn(req: Request, res: Response, next: NextFunction) {
-    const { email, password } = req.body;
+    const errors = validationResult(req);
 
-    const isValidEmail = regex.emailRegex.test(email);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+    }
 
-    if (!email || !password) {
-        res.status(400).json({ message: 'Email and password required' });
+    try {
+        const { email, password } = req.body;
+        const collection = await mongoose.connection.db.collection('kikao');
+        const existingUser = await collection.findOne({ email: email });
+        if (existingUser === null) {
+            return res.status(404).json({ error: 'Wrong email address' });
+        }
+        const isPasswordValid = await comparePassword(
+            password,
+            existingUser.password
+        );
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                message: 'Incorrect password'
+            });
+        }
+
+        const payload: Ipayload = {
+            userId: existingUser.userId,
+            email: email
+        };
+
+        const token = await signToken(payload);
+
+        // exclude sensitive data to send to client i.e hashedpassword
+        const user = {
+            _id: existingUser._id,
+            userId: existingUser.userId,
+            username: existingUser.username,
+            email: existingUser.email,
+            regDate: existingUser.date,
+            kikaotype: existingUser.kikaotype,
+            telNumber: existingUser.phone
+        };
+        return res
+            .status(200)
+            .json({ auth: true, token: token, user: { ...user } });
+    } catch (error) {
+        next(error);
         return;
     }
-
-    if (isValidEmail) {
-        try {
-            const collection = await mongoose.connection.db.collection('kikao');
-            const existingUser = await collection.findOne({ email: email });
-
-            const isPasswordValid = await comparePassword(
-                password,
-                existingUser?.password
-            );
-            const payload: Ipayload = {
-                userId: existingUser?.id,
-                email: email
-            };
-            const token = await signToken(payload);
-
-            if (!isPasswordValid) {
-                res.status(401).json({
-                    message: 'Incorrect password'
-                });
-                return;
-            }
-            // exclude sensitive data to send to client i.e hashedpassword
-            const user = {
-                _id: existingUser?._id,
-                userId: existingUser?.userId,
-                username: existingUser?.username,
-                email: existingUser?.email,
-                regDate: existingUser?.date,
-                kikaotype: existingUser?.kikaotype
-            };
-            res.status(200).json({ auth: true, token: token, user: user });
-            return;
-        } catch (error) {
-            next(error);
-            return;
-        }
-    }
-
-    res.status(500).json({
-        message: 'Email or password provided is invalid'
-    });
-    return;
 }
 // Routes
 
@@ -149,6 +146,32 @@ router.post(
         windowMs: 1000,
         max: 1
     }),
+    [
+        check('username')
+            .not()
+            .isEmpty()
+            .isLength({ min: 4 })
+            .withMessage('the name must have minimum length of 4')
+            .trim(),
+        check('kikaotype')
+            .not()
+            .isEmpty()
+            .withMessage('kikaotype is required')
+            .trim(),
+        check('phone')
+            .not()
+            .isEmpty()
+            .withMessage('Phone number is required')
+            .isNumeric()
+            .isLength({ min: 10 })
+            .withMessage('Phone number must be a minimum of 10')
+            .trim(),
+        check('email').isEmail().withMessage('Invalid email address'),
+        check('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .trim()
+    ],
     signUp
 );
 router.post(
@@ -157,6 +180,13 @@ router.post(
         windowMs: 1000,
         max: 1
     }),
+    [
+        check('email').isEmail().withMessage('Invalid email address'),
+        check('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .trim()
+    ],
     signIn
 );
 

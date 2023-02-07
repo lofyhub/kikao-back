@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
 
 import { verifyToken } from '../middlewares/verifyToken';
-import { houseSchema } from '../interfaces';
+import { houseSchema, userPublisher } from '../interfaces';
 
 const router = Router();
 
@@ -26,7 +26,6 @@ async function getListingPublisher(
         const existingUser = await collection.findOne({
             userId: _id
         });
-
         // exclude sensitive data to send to client i.e hashedpassword - decide later on safety of emails
         if (!existingUser) {
             res.status(300).json({
@@ -34,13 +33,15 @@ async function getListingPublisher(
             });
             return;
         }
-        const user = {
-            _id: existingUser?._id,
-            username: existingUser?.username,
-            userId: existingUser?.userId,
-            email: existingUser?.email,
-            regDate: existingUser?.date,
-            kikaoType: existingUser?.kikaoType
+
+        const user: userPublisher = {
+            _id: existingUser._id,
+            username: existingUser.username,
+            userId: existingUser.userId,
+            teleNumber: existingUser.phone || existingUser.business['phone'],
+            email: existingUser.email,
+            regDate: existingUser.date,
+            kikaoType: existingUser.kikaoType
         };
 
         res.status(200).json({ message: 'Successful', data: user });
@@ -73,12 +74,11 @@ async function getUserListings(
             .find<houseSchema>(query)
             .toArray();
         const count = userListings.length;
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Successful',
             data: userListings,
             count
         });
-        return;
     } catch (error) {
         next(error);
         return;

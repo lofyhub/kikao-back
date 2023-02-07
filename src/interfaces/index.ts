@@ -1,3 +1,5 @@
+import { ObjectID } from 'bson';
+
 export interface IUser {
     userId: string;
     username: string;
@@ -5,10 +7,10 @@ export interface IUser {
     kikaoType: string;
     password: string;
     date: Date;
+    phone: string;
     business: {
         name: string;
         location: string;
-        phone: string;
         businessType: string;
         city: string;
     };
@@ -78,3 +80,15 @@ export interface booking {
     selectTime: string;
     bookedById: string;
 }
+
+type ObjectId = ObjectID;
+
+export type userPublisher = {
+    _id: ObjectId;
+    username: string;
+    userId: string;
+    teleNumber: string;
+    email: string;
+    regDate: Date;
+    kikaoType: string;
+};

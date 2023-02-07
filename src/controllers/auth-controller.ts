@@ -168,8 +168,8 @@ router.post(
             .trim(),
         check('email').isEmail().withMessage('Invalid email address'),
         check('password')
-            .isLength({ min: 8 })
-            .withMessage('Password must be at least 8 characters long')
+            .isLength({ min: 4 })
+            .withMessage('Password must be at least 4 characters long')
             .trim()
     ],
     signUp
@@ -183,8 +183,8 @@ router.post(
     [
         check('email').isEmail().withMessage('Invalid email address'),
         check('password')
-            .isLength({ min: 8 })
-            .withMessage('Password must be at least 8 characters long')
+            .isLength({ min: 4 })
+            .withMessage('Password must be at least 4 characters long')
             .trim()
     ],
     signIn

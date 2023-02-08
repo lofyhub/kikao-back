@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
 import { verifyToken } from '../middlewares/verifyToken';
+import { check, validationResult } from 'express-validator';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
 
@@ -40,6 +41,11 @@ async function createUserListing(
     res: Response,
     next: NextFunction
 ) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ message: errors.array() });
+    }
+
     const {
         Id,
         title,
@@ -52,27 +58,16 @@ async function createUserListing(
         parking,
         size,
         status,
-        county
+        county,
+        description,
+        wifi,
+        security,
+        garbagecollection,
+        roomnumber
     } = req.body;
-    if (
-        !title ||
-        !Id ||
-        !location ||
-        !price ||
-        !duration ||
-        !bedrooms ||
-        !totalrooms ||
-        !washrooms ||
-        !parking ||
-        !size ||
-        !status ||
-        !county
-    ) {
-        res.status(400).json({
-            message: 'Your provided incorrect credentials'
-        });
-        return;
-    }
+
+    // TODO: Ensure a user can only post a listing with his Id and not anyone elses
+
     let images: any[] = [];
     // create an array of image upload promises
     if (req.files) {
@@ -88,7 +83,6 @@ async function createUserListing(
     const imageUploadPromises = await Promise.all(images);
     const listingId = nanoid();
     const timestamp = new Date();
-    // TODO: Better verification of what is sent by the user
     const listing: houseSchema = {
         id: listingId,
         userId: Id,
@@ -105,21 +99,24 @@ async function createUserListing(
             bedrooms: JSON.parse(bedrooms),
             totalRooms: JSON.parse(totalrooms),
             washRooms: JSON.parse(washrooms),
-            parking: JSON.parse(parking)
+            parking: JSON.parse(parking),
+            roomNumber: JSON.parse(roomnumber),
+            security: JSON.parse(security),
+            WIFI: JSON.parse(wifi),
+            garbageCollection: JSON.parse(garbagecollection)
         },
         size: size,
         createdAt: timestamp,
-        status: status
+        status: status,
+        description: JSON.parse(description)
     };
-
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const result = await collection.insertOne(listing);
 
         return res.status(200).json({ result });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -216,6 +213,62 @@ router.post(
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
     multi_upload.array('kikaoimage', 4),
+    [
+        check('title')
+            .not()
+            .isEmpty()
+            .isLength({ min: 4 })
+            .withMessage('the name must have minimum length of 4')
+            .trim(),
+        check('Id')
+            .not()
+            .isEmpty()
+            .isLength({ min: 10 })
+            .withMessage('Id must not be empty and be at least leng of 10')
+            .trim(),
+        check('location')
+            .not()
+            .isEmpty()
+            .isLength({ min: 4 })
+            .withMessage('Location must have minimum length of 4')
+            .trim(),
+        check('price')
+            .not()
+            .isEmpty()
+            .isNumeric()
+            .withMessage('Price must be numeric'),
+        check('bedrooms').not().isEmpty(),
+        check('duration').not().isEmpty(),
+        check('size').not().isEmpty(),
+        check('washrooms')
+            .not()
+            .isEmpty()
+            .isNumeric()
+            .withMessage('washrooms must be numeric'),
+        check('totalrooms')
+            .not()
+            .isEmpty()
+            .withMessage('totalRooms must be numeric'),
+        check('county')
+            .isLength({ min: 4 })
+            .withMessage('County must be at least 4 characters long')
+            .trim(),
+        check('parking').isBoolean().withMessage('Parking must be a boolean'),
+        check('wifi').isBoolean().withMessage('WIFI must be a boolean'),
+        check('garbagecollection')
+            .isBoolean()
+            .withMessage('garbageCollection must be a boolean'),
+        check('roomnumber')
+            .isBoolean()
+            .withMessage('Roomnumber must be a boolean'),
+        check('description')
+            .not()
+            .isEmpty()
+            .isLength({ min: 20 })
+            .withMessage('Description must be at least 20 characters long')
+            .trim(),
+        check('security').isBoolean().withMessage('security must be a boolean')
+    ],
     createUserListing
 );
 router.put(

@@ -57,10 +57,15 @@ export interface houseSchema {
         totalRooms: string;
         washRooms: number;
         parking: boolean;
+        roomNumber: boolean;
+        security: boolean;
+        garbageCollection: boolean;
+        WIFI: boolean;
     };
     size: string;
     createdAt: Date;
     status: string;
+    description: string;
 }
 
 export interface Ipayload {

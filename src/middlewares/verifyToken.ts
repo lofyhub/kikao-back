@@ -21,10 +21,8 @@ export async function verifyToken(
             algorithms: ['RS256']
         })) as JwtPayload;
         req.body.userId = await decoded.userId;
-        next();
-        return;
+        return next();
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }

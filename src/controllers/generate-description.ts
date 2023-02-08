@@ -30,7 +30,6 @@ async function generateDescription(
                 stop: null
             })
             .then((response) => {
-                console.log(response.data.choices[0].text);
                 return res
                     .status(200)
                     .json({ generatedText: response.data.choices[0].text });

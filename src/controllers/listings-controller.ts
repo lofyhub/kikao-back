@@ -108,7 +108,7 @@ async function createUserListing(
         size: size,
         createdAt: timestamp,
         status: status,
-        description: JSON.parse(description)
+        description: description
     };
     try {
         const collection = await mongoose.connection.db.collection('listing');

@@ -8,6 +8,7 @@ import authController from './controllers/auth-controller';
 import listingsController from './controllers/listings-controller';
 import userController from './controllers/user-controller';
 import bookingController from './controllers/bookings';
+import descriptionController from './controllers/generate-description';
 import { debug } from './utilities/debug';
 
 /**
@@ -33,5 +34,6 @@ app.use(authController);
 app.use(listingsController);
 app.use(userController);
 app.use(bookingController);
+app.use(descriptionController);
 
 export default app;

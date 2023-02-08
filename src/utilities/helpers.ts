@@ -29,7 +29,7 @@ export async function signToken(payload: Ipayload): Promise<string> {
     if (!payload) {
         throw new Error('Paylod is required');
     }
-    const signedJwt = await jwt.sign(payload, privateKey, {
+    const signedJwt = await jwt.sign({ ...payload }, privateKey, {
         algorithm: 'RS256',
         expiresIn: '8h'
     });

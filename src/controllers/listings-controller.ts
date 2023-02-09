@@ -206,6 +206,17 @@ async function getListings(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+async function getListing(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.body;
+    try {
+        const collection = await mongoose.connection.db.collection('listing');
+        const listing = await collection.findOne({ _id: new ObjectId(id) });
+        return res.status(200).json({ listing });
+    } catch (error) {
+        return next(error);
+    }
+}
+
 // Routes
 router.get('/listings', getListings);
 router.post(
@@ -282,6 +293,12 @@ router.delete(
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
     deleteListing
+);
+
+router.post(
+    '/user/listing',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    getListing
 );
 
 export default router;

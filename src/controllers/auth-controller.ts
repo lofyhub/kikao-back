@@ -117,7 +117,7 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             userId: existingUser.userId,
             email: email
         };
-        console.log(payload);
+
         const token = await signToken(payload);
 
         // exclude sensitive data to send to client i.e hashedpassword

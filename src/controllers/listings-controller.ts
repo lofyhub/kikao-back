@@ -217,6 +217,28 @@ async function getListing(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+async function filterListings(req: Request, res: Response, next: NextFunction) {
+    const { filters } = req.body;
+    console.log(filters);
+    try {
+        const collection = await mongoose.connection.db.collection('listing');
+        const listings = await collection.find({}).toArray();
+        const filteredListings = listings.filter((house) => {
+            return (
+                (filters.price === undefined ||
+                    house.rate.price <= filters.price) &&
+                (filters.county === undefined ||
+                    house.county === filters.county) &&
+                (filters.propertyType === undefined ||
+                    house.size === filters.size)
+            );
+        });
+        return res.status(200).json({ listings: filteredListings });
+    } catch (error) {
+        return next(error);
+    }
+}
+
 // Routes
 router.get('/listings', getListings);
 router.post(
@@ -299,6 +321,12 @@ router.post(
     '/user/listing',
     rateLimiter({ windowMs: 1000, max: 1 }),
     getListing
+);
+
+router.post(
+    '/sort/listings',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    filterListings
 );
 
 export default router;

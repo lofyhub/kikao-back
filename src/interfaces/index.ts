@@ -65,6 +65,7 @@ export interface houseSchema {
     size: string;
     createdAt: Date;
     status: string;
+    yearBuild: string;
     description: string;
 }
 

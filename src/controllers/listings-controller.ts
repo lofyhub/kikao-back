@@ -11,6 +11,33 @@ import { nanoid } from 'nanoid';
 const router = Router();
 const storage = multer.memoryStorage();
 
+const fileSizeLimitErrorHandler = (
+    err: any,
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    if (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(418).json({ error: err.message });
+        }
+
+        // Check for file size limit exceeded error
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ error: 'File size limit exceeded' });
+        }
+
+        // Check for total size limit exceeded error
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(413).json({ error: 'Total size limit exceeded' });
+        }
+
+        return res.status(500).json({ error: 'Server error' });
+    }
+
+    return next();
+};
+
 const fileFilter = (
     req: Request,
     file: { mimetype: string },
@@ -27,6 +54,7 @@ const fileFilter = (
         cb(null, false);
     }
 };
+
 const multi_upload = multer({
     storage: storage,
     limits: {
@@ -42,8 +70,16 @@ async function createUserListing(
     next: NextFunction
 ) {
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
         return res.status(422).json({ message: errors.array() });
+    }
+
+    if (!req.files || req.files.length === 0) {
+        // If no file was sent, return an error response
+        return res
+            .status(400)
+            .json({ error: 'Please select an image to upload' });
     }
 
     const {
@@ -63,7 +99,8 @@ async function createUserListing(
         wifi,
         security,
         garbagecollection,
-        roomnumber
+        roomnumber,
+        year
     } = req.body;
 
     // TODO: Ensure a user can only post a listing with his Id and not anyone elses
@@ -108,13 +145,14 @@ async function createUserListing(
         size: size,
         createdAt: timestamp,
         status: status,
+        yearBuild: year,
         description: description
     };
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const result = await collection.insertOne(listing);
 
-        return res.status(200).json({ result });
+        return res.status(200).json({ message: 'Successful', ...result });
     } catch (error) {
         return next(error);
     }
@@ -147,8 +185,7 @@ async function deleteListing(req: Request, res: Response, next: NextFunction) {
             .status(200)
             .json({ message: 'Successfully deleted listing' });
     } catch (error: unknown) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -195,14 +232,13 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
         return next(error);
     }
 }
-async function getListings(req: Request, res: Response, next: NextFunction) {
+async function getListings(_req: Request, res: Response, next: NextFunction) {
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
         return res.status(200).json({ listings });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -219,7 +255,6 @@ async function getListing(req: Request, res: Response, next: NextFunction) {
 
 async function filterListings(req: Request, res: Response, next: NextFunction) {
     const { filters } = req.body;
-    console.log(filters);
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
@@ -246,61 +281,128 @@ router.post(
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
     multi_upload.array('kikaoimage', 4),
+    fileSizeLimitErrorHandler,
     [
         check('title')
             .not()
             .isEmpty()
+            .withMessage('Title should not be empty')
+            .trim()
             .isLength({ min: 4 })
-            .withMessage('the name must have minimum length of 4')
-            .trim(),
+            .withMessage('Title must be at least 4 characters long'),
         check('Id')
             .not()
             .isEmpty()
-            .isLength({ min: 10 })
-            .withMessage('Id must not be empty and be at least leng of 10')
-            .trim(),
+            .withMessage('Id should not be empty')
+            .trim()
+            .isLength({ min: 10 }),
         check('location')
             .not()
             .isEmpty()
+            .withMessage('Location should not be empty')
+            .trim()
             .isLength({ min: 4 })
-            .withMessage('Location must have minimum length of 4')
-            .trim(),
+            .withMessage('Location must be at least 4 characters long'),
         check('price')
             .not()
             .isEmpty()
+            .withMessage('Price should not be empty')
             .isNumeric()
-            .withMessage('Price must be numeric'),
-        check('bedrooms').not().isEmpty(),
-        check('duration').not().isEmpty(),
-        check('size').not().isEmpty(),
+            .withMessage('Price must be a number'),
+
+        check('bedrooms')
+            .not()
+            .isEmpty()
+            .withMessage('Bedrooms should not be empty')
+            .trim(),
+
+        check('duration')
+            .not()
+            .isEmpty()
+            .withMessage('Duration should not be empty')
+            .trim(),
+
+        check('size')
+            .not()
+            .isEmpty()
+            .withMessage('Size should not be empty')
+            .trim(),
+
         check('washrooms')
             .not()
             .isEmpty()
+            .withMessage('Washrooms should not be empty')
             .isNumeric()
-            .withMessage('washrooms must be numeric'),
+            .withMessage('Washrooms must be a number'),
+
         check('totalrooms')
             .not()
             .isEmpty()
-            .withMessage('totalRooms must be numeric'),
+            .withMessage('Total rooms should not be empty')
+            .trim()
+            .isNumeric()
+            .withMessage('Total rooms must be a number'),
+
         check('county')
+            .not()
+            .isEmpty()
+            .withMessage('County should not be empty')
+            .trim()
             .isLength({ min: 4 })
             .withMessage('County must be at least 4 characters long')
-            .trim(),
-        check('parking').isBoolean().withMessage('Parking must be a boolean'),
-        check('wifi').isBoolean().withMessage('WIFI must be a boolean'),
+            .custom((value) => !/\s/.test(value))
+            .withMessage('No spaces are allowed in the username'),
+        check('parking')
+            .not()
+            .isEmpty()
+            .withMessage('Parking should not be empty')
+            .isBoolean()
+            .withMessage('Parking must be a boolean'),
+
+        check('wifi')
+            .not()
+            .isEmpty()
+            .withMessage('WIFI should not be empty')
+            .isBoolean()
+            .withMessage('WIFI must be a boolean'),
+
         check('garbagecollection')
+            .not()
+            .isEmpty()
+            .withMessage('Garbage collection should not be empty')
             .isBoolean()
-            .withMessage('garbageCollection must be a boolean'),
+            .withMessage('Garbage collection must be a boolean'),
+
         check('roomnumber')
+            .not()
+            .isEmpty()
+            .withMessage('Room number should not be empty')
             .isBoolean()
-            .withMessage('Roomnumber must be a boolean'),
+            .withMessage('Room number must be a boolean'),
+
         check('description')
             .not()
             .isEmpty()
+            .withMessage('Description should not be empty')
+            .trim()
             .isLength({ min: 20 })
-            .withMessage('Description must be at least 20 characters long')
-            .trim(),
-        check('security').isBoolean().withMessage('security must be a boolean')
+            .withMessage('Description must be at least 20 characters long'),
+
+        check('security')
+            .not()
+            .isEmpty()
+            .withMessage('Security should not be empty')
+            .isBoolean()
+            .withMessage('Security must be a boolean'),
+        check('year')
+            .not()
+            .isEmpty()
+            .withMessage('Year should not be empty')
+            .trim()
+            .isLength({ max: 4 })
+            .withMessage('Year must be 4 characters long')
+            .custom((value) => !/\s/.test(value))
+            .withMessage('No spaces are allowed in the username')
     ],
     createUserListing
 );

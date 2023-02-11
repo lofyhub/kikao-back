@@ -22,7 +22,12 @@ export async function verifyToken(
         })) as JwtPayload;
         req.body.userId = await decoded.userId;
         return next();
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                error: 'Token has expired. Please login again.'
+            });
+        }
         return next(error);
     }
 }

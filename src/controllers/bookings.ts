@@ -79,9 +79,7 @@ router.post(
             .isEmpty()
             .isLength({ min: 4 })
             .withMessage('the name must have minimum length of 4')
-            .trim()
-            .custom((value) => !/\s/.test(value))
-            .withMessage('No spaces are allowed in the username'),
+            .trim(),
         check('telephone')
             .not()
             .isEmpty()

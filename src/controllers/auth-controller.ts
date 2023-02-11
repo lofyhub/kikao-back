@@ -181,11 +181,17 @@ router.post(
         max: 1
     }),
     [
-        check('email').isEmail().withMessage('Invalid email address'),
+        check('email')
+            .isEmail()
+            .withMessage('Invalid email address')
+            .custom((value) => !/\s/.test(value))
+            .withMessage('No spaces are allowed in the username'),
         check('password')
             .isLength({ min: 4 })
             .withMessage('Password must be at least 4 characters long')
             .trim()
+            .custom((value) => !/\s/.test(value))
+            .withMessage('No spaces are allowed in the username')
     ],
     signIn
 );

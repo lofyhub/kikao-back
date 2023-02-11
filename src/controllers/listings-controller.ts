@@ -72,7 +72,7 @@ async function createUserListing(
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        return res.status(422).json({ message: errors.array() });
+        return res.status(422).json({ error: errors.array() });
     }
 
     if (!req.files || req.files.length === 0) {
@@ -349,9 +349,7 @@ router.post(
             .withMessage('County should not be empty')
             .trim()
             .isLength({ min: 4 })
-            .withMessage('County must be at least 4 characters long')
-            .custom((value) => !/\s/.test(value))
-            .withMessage('No spaces are allowed in the username'),
+            .withMessage('County must be at least 4 characters long'),
         check('parking')
             .not()
             .isEmpty()

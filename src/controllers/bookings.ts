@@ -61,13 +61,29 @@ async function handleBooking(req: Request, res: Response, next: NextFunction) {
             ...booking
         });
 
-        res.status(200).json({ message: bookingRes });
-        return;
+        return res.status(200).json({ message: bookingRes });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
+
+async function getBookings(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+    const { id } = req.body;
+
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+    }
+
+    try {
+        const collection = await mongoose.connection.db.collection('bookings');
+        const results = await collection.find({ bookingFor: id }).toArray();
+        return res.status(200).json({ bookings: results });
+    } catch (error) {
+        return next(error);
+    }
+}
+
 // Routes
 router.post(
     '/bookings',
@@ -84,8 +100,8 @@ router.post(
             .not()
             .isEmpty()
             .isNumeric()
-            .isLength({ min: 10 })
-            .withMessage('Telephone number must be a minimum of 10'),
+            .isLength({ max: 10 })
+            .withMessage('Telephone number must be 10'),
         check('listingId')
             .not()
             .isEmpty()
@@ -114,6 +130,20 @@ router.post(
             .trim()
     ],
     handleBooking
+);
+router.post(
+    '/user/bookings',
+    rateLimiter({ windowMs: 1000, max: 1 }),
+    verifyToken,
+    [
+        check('id')
+            .not()
+            .isEmpty()
+            .isLength({ min: 4 })
+            .withMessage('the name must have minimum length of 4')
+            .trim()
+    ],
+    getBookings
 );
 
 export default router;

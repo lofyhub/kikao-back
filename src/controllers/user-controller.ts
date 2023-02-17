@@ -191,7 +191,7 @@ async function deleteBookmark(req: Request, res: Response, next: NextFunction) {
 }
 
 // Routes
-router.post('/listing/author', verifyToken, getListingPublisher);
+router.post('/listing/author', getListingPublisher);
 router.post('/author/listings', verifyToken, getUserListings);
 router.post('/bookmarks', verifyToken, addFavourite);
 router.post('/user/bookmarks', verifyToken, fetchBookmarks);

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
 
 import { verifyToken } from '../middlewares/verifyToken';
-import { houseSchema, userPublisher } from '../interfaces';
+import { houseSchema, UserPublisherWithoutPassword } from '../interfaces';
 
 const router = Router();
 
@@ -14,12 +14,11 @@ async function getListingPublisher(
 ) {
     const { _id } = req.body;
     if (!_id) {
-        res.status(403).json({ mesage: 'Id is required' });
-        return;
+        return res.status(403).json({ mesage: 'Id is required' });
     }
 
     if (typeof _id !== 'string') {
-        throw new Error('Id should be a string');
+        throw new Error('Id should be a string!');
     }
     try {
         const collection = await mongoose.connection.db.collection('kikao');
@@ -28,27 +27,29 @@ async function getListingPublisher(
         });
         // exclude sensitive data to send to client i.e hashedpassword - decide later on safety of emails
         if (!existingUser) {
-            res.status(300).json({
+            return res.status(300).json({
                 message: 'Listing author with the given ID was not found'
             });
-            return;
         }
-
-        const user: userPublisher = {
+        const user: UserPublisherWithoutPassword = {
             _id: existingUser._id,
             username: existingUser.username,
             userId: existingUser.userId,
-            teleNumber: existingUser.phone || existingUser.business['phone'],
             email: existingUser.email,
-            regDate: existingUser.date,
-            kikaoType: existingUser.kikaoType
+            kikaoType: existingUser.kikaoType,
+            date: existingUser.date,
+            business: {
+                name: existingUser.business.name,
+                location: existingUser.business.location,
+                phone: existingUser.business.phone,
+                businessType: existingUser.business.businessType,
+                city: existingUser.business.city
+            }
         };
 
-        res.status(200).json({ message: 'Successful', data: user });
-        return;
+        return res.status(200).json({ message: 'Successful', data: user });
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 

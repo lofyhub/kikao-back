@@ -91,10 +91,19 @@ type ObjectId = ObjectID;
 
 export type userPublisher = {
     _id: ObjectId;
-    username: string;
     userId: string;
-    teleNumber: string;
+    username: string;
     email: string;
-    regDate: Date;
     kikaoType: string;
+    date: Date;
+    password: string;
+    business: {
+        name: string;
+        location: string;
+        phone: string;
+        businessType: string;
+        city: string;
+    };
 };
+
+export type UserPublisherWithoutPassword = Omit<userPublisher, 'password'>;

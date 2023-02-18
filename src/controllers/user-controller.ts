@@ -7,7 +7,7 @@ import { houseSchema, UserPublisherWithoutPassword } from '../interfaces';
 
 const router = Router();
 
-async function getListingPublisher(
+async function getListingAuthor(
     req: Request,
     res: Response,
     next: NextFunction
@@ -46,7 +46,6 @@ async function getListingPublisher(
                 city: existingUser.business.city
             }
         };
-
         return res.status(200).json({ message: 'Successful', data: user });
     } catch (error) {
         return next(error);
@@ -192,7 +191,7 @@ async function deleteBookmark(req: Request, res: Response, next: NextFunction) {
 }
 
 // Routes
-router.post('/listing/author', getListingPublisher);
+router.post('/listing/author', getListingAuthor);
 router.post('/author/listings', verifyToken, getUserListings);
 router.post('/bookmarks', verifyToken, addFavourite);
 router.post('/user/bookmarks', verifyToken, fetchBookmarks);

@@ -1,4 +1,5 @@
 import { ObjectID } from 'bson';
+import { number, string, object, size } from 'superstruct';
 
 export interface IUser {
     userId: string;
@@ -107,3 +108,11 @@ export type userPublisher = {
 };
 
 export type UserPublisherWithoutPassword = Omit<userPublisher, 'password'>;
+
+export const reviewSchema = object({
+    house_id: size(string(), 10, 30),
+    user_id: size(string(), 10, 30),
+    rating: size(number(), 1, 5),
+    comment: size(string(), 10, 200),
+    listing_author_id: size(string(), 10, 30)
+});

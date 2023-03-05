@@ -111,6 +111,7 @@ export type UserPublisherWithoutPassword = Omit<userPublisher, 'password'>;
 
 export const reviewSchema = object({
     house_id: size(string(), 10, 30),
+    name: size(string(), 4, 30),
     user_id: size(string(), 10, 30),
     rating: size(number(), 1, 5),
     comment: size(string(), 10, 200),

@@ -46,7 +46,8 @@ async function getListingReviews(
         const reviews = await collection
             .find({ listing_author_id: author_id })
             .toArray();
-        return res.status(200).json(reviews);
+        res.status(200).json(reviews);
+        return;
     } catch (err) {
         next(err);
         return;

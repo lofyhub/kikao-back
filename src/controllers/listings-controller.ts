@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { ObjectId } from 'mongodb';
+import { ObjectId, GridFSBucketReadStream } from 'mongodb';
 import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
 import { houseSchema } from '../interfaces';
@@ -7,6 +7,7 @@ import { verifyToken } from '../middlewares/verifyToken';
 import { check, validationResult } from 'express-validator';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
+import { Readable } from 'stream';
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -105,19 +106,37 @@ async function createUserListing(
 
     // TODO: Ensure a user can only post a listing with his Id and not anyone elses
 
-    let images: any[] = [];
+    // Create a new GridFSBucket instance
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+        bucketName: 'images'
+    });
+
     // create an array of image upload promises
-    if (req.files) {
-        images = (req.files as Array<any>).map((file: any) => {
-            return {
-                data: file.buffer,
-                contentType: file.mimetype,
-                fileName: Date.now() + file.originalname.toLowerCase()
-            };
+    const imageUploadPromises = (req.files as Array<any>).map((file: any) => {
+        const readable = new Readable();
+        readable._read = () => {};
+        readable.push(file.buffer);
+        readable.push(null);
+
+        const uploadStream = bucket.openUploadStream(file.originalname, {
+            metadata: {
+                contentType: file.mimetype
+            }
         });
-    }
+
+        return new Promise((resolve, reject) => {
+            readable
+                .pipe(uploadStream)
+                .on('error', reject)
+                .on('finish', () => {
+                    resolve(uploadStream.id);
+                });
+        });
+    });
+
     // wait for all the image uploads to complete
-    const imageUploadPromises = await Promise.all(images);
+    const imageIds = await Promise.all(imageUploadPromises);
+
     const listingId = nanoid();
     const timestamp = new Date();
     const listing: houseSchema = {
@@ -126,7 +145,7 @@ async function createUserListing(
         name: title,
         location: location,
         county: county,
-        images: imageUploadPromises,
+        images: imageIds.map((id: any) => new ObjectId(id)),
         rate: {
             price: JSON.parse(price),
             duration: duration,
@@ -232,14 +251,73 @@ async function updateListing(req: Request, res: Response, next: NextFunction) {
         return next(error);
     }
 }
-async function getListings(_req: Request, res: Response, next: NextFunction) {
+
+async function getListings(req: Request, res: Response, next: NextFunction) {
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
-        return res.status(200).json({ listings });
+
+        // Create a new GridFSBucket instance
+        const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+            bucketName: 'images'
+        });
+
+        // Retrieve image data for each listing
+        const listingsWithImages = await Promise.all(
+            listings.map(async (listing) => {
+                const imageIds = listing.images.map(
+                    (id: any) => new mongoose.Types.ObjectId(id)
+                );
+
+                const images = await bucket
+                    .find({ _id: { $in: imageIds } })
+                    .toArray();
+
+                const imageData = await Promise.all(
+                    images.map(async (image: any) => {
+                        const readStream = bucket.openDownloadStream(image._id);
+                        const data = await streamToBase64(readStream);
+                        return {
+                            filename: image.filename,
+                            contentType: image.metadata.contentType,
+                            data
+                        };
+                    })
+                );
+
+                return {
+                    ...listing,
+                    images: imageData
+                };
+            })
+        );
+
+        res.status(200).json({ listings: listingsWithImages });
+        return;
     } catch (error) {
         return next(error);
     }
+}
+
+// Helper function to convert a GridFSBucketReadStream to a base64-encoded string
+function streamToBase64(stream: GridFSBucketReadStream): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const chunks: any[] = [];
+
+        stream.on('data', (chunk) => {
+            chunks.push(chunk);
+        });
+
+        stream.on('end', () => {
+            const buffer = Buffer.concat(chunks);
+            const data = buffer.toString('base64');
+            resolve(data);
+        });
+
+        stream.on('error', (error) => {
+            reject(error);
+        });
+    });
 }
 
 async function getListing(req: Request, res: Response, next: NextFunction) {

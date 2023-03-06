@@ -33,13 +33,6 @@ export interface IDB extends IUser, IRole {
     mongoose: any;
     role: IRole;
 }
-interface imageObject {
-    file: {
-        data: Buffer;
-        contentType: string;
-    };
-    fileName: string;
-}
 
 export interface houseSchema {
     id: string;
@@ -47,7 +40,7 @@ export interface houseSchema {
     name: string;
     location: string;
     county: string;
-    images: string[] | imageObject[];
+    images: ObjectID[];
     rate: {
         price: number;
         duration: string;

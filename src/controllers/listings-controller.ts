@@ -1,16 +1,23 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { ObjectId, GridFSBucketReadStream } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import mongoose from 'mongoose';
 import rateLimiter from '../middlewares/rate_limit';
-import { houseSchema } from '../interfaces';
+import { houseSchema, schema, File } from '../interfaces';
 import { verifyToken } from '../middlewares/verifyToken';
-import { check, validationResult } from 'express-validator';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
-import { Readable } from 'stream';
+import { cloudinaryInstance } from '../utilities/cloudinary';
 
 const router = Router();
-const storage = multer.memoryStorage();
+const multerStorage = multer.diskStorage({
+    destination: (request, file, callback) => {
+        callback(null, __dirname);
+    },
+
+    filename: (request, file, callback) => {
+        callback(null, file.originalname);
+    }
+});
 
 const fileSizeLimitErrorHandler = (
     err: any,
@@ -57,7 +64,7 @@ const fileFilter = (
 };
 
 const multi_upload = multer({
-    storage: storage,
+    storage: multerStorage,
     limits: {
         // 1MB
         fileSize: 1024 * 1024 * 1
@@ -70,19 +77,6 @@ async function createUserListing(
     res: Response,
     next: NextFunction
 ) {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-        return res.status(422).json({ error: errors.array() });
-    }
-
-    if (!req.files || req.files.length === 0) {
-        // If no file was sent, return an error response
-        return res
-            .status(400)
-            .json({ error: 'Please select an image to upload' });
-    }
-
     const {
         Id,
         title,
@@ -103,71 +97,87 @@ async function createUserListing(
         roomnumber,
         year
     } = req.body;
-
-    // TODO: Ensure a user can only post a listing with his Id and not anyone elses
-
-    // Create a new GridFSBucket instance
-    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-        bucketName: 'images'
-    });
-
-    // create an array of image upload promises
-    const imageUploadPromises = (req.files as Array<any>).map((file: any) => {
-        const readable = new Readable();
-        readable._read = () => {};
-        readable.push(file.buffer);
-        readable.push(null);
-
-        const uploadStream = bucket.openUploadStream(file.originalname, {
-            metadata: {
-                contentType: file.mimetype
-            }
-        });
-
-        return new Promise((resolve, reject) => {
-            readable
-                .pipe(uploadStream)
-                .on('error', reject)
-                .on('finish', () => {
-                    resolve(uploadStream.id);
-                });
-        });
-    });
-
-    // wait for all the image uploads to complete
-    const imageIds = await Promise.all(imageUploadPromises);
-
-    const listingId = nanoid();
-    const timestamp = new Date();
-    const listing: houseSchema = {
-        id: listingId,
-        userId: Id,
-        name: title,
-        location: location,
-        county: county,
-        images: imageIds.map((id: any) => new ObjectId(id)),
-        rate: {
-            price: JSON.parse(price),
-            duration: duration,
-            countryCode: 'kshs'
-        },
-        compartments: {
-            bedrooms: JSON.parse(bedrooms),
-            totalRooms: JSON.parse(totalrooms),
-            washRooms: JSON.parse(washrooms),
-            parking: JSON.parse(parking),
-            roomNumber: JSON.parse(roomnumber),
-            security: JSON.parse(security),
-            WIFI: JSON.parse(wifi),
-            garbageCollection: JSON.parse(garbagecollection)
-        },
-        size: size,
-        createdAt: timestamp,
-        status: status,
-        yearBuild: year,
-        description: description
+    // Parse the data and convert strings to numbers and booleans where appropriate
+    const data = {
+        Id: Id.trim(),
+        title: title.trim(),
+        location: location.trim(),
+        price: parseFloat(price),
+        duration: duration.trim(),
+        bedrooms: bedrooms.trim(),
+        totalrooms: parseInt(totalrooms),
+        washrooms: parseInt(washrooms),
+        parking: parking === 'true',
+        size: size.trim(),
+        county: county.trim(),
+        description: description.trim(),
+        wifi: wifi === 'true',
+        security: security === 'true',
+        garbagecollection: garbagecollection === 'true',
+        roomnumber: roomnumber === 'true',
+        year: year.trim()
     };
+    const { success, ...error } = schema.safeParse(data);
+
+    if (!success) {
+        res.status(422).json({ error });
+        return;
+    }
+
+    if (!req.files || req.files.length === 0) {
+        // If no file was sent, return an error response
+        return res
+            .status(400)
+            .json({ error: 'Please select an image to upload' });
+    }
+
     try {
+        // TODO: Ensure a user can only post a listing with his Id and not anyone elses
+        const files: File[] = Array.isArray(req.files)
+            ? req.files
+            : Object.values(req.files).flat();
+
+        const uploadUrls: string[] = [];
+        for (let i = 0; i < files.length; ++i) {
+            const path: string = files[i].path;
+            const { imageURL } = await cloudinaryInstance.uploadImage(path);
+            if (imageURL) {
+                uploadUrls.push(imageURL);
+            }
+        }
+        console.log(req.files);
+        const imageUrls = await uploadUrls;
+
+        const listingId = nanoid();
+        const timestamp = new Date();
+        const listing: houseSchema = {
+            id: listingId,
+            userId: Id,
+            name: title,
+            location: location,
+            county: county,
+            images: imageUrls,
+            rate: {
+                price: JSON.parse(price),
+                duration: duration,
+                countryCode: 'kshs'
+            },
+            compartments: {
+                bedrooms: JSON.parse(bedrooms),
+                totalRooms: JSON.parse(totalrooms),
+                washRooms: JSON.parse(washrooms),
+                parking: JSON.parse(parking),
+                roomNumber: JSON.parse(roomnumber),
+                security: JSON.parse(security),
+                WIFI: JSON.parse(wifi),
+                garbageCollection: JSON.parse(garbagecollection)
+            },
+            size: size,
+            createdAt: timestamp,
+            status: status,
+            yearBuild: year,
+            description: description
+        };
         const collection = await mongoose.connection.db.collection('listing');
         const result = await collection.insertOne(listing);
 
@@ -256,68 +266,11 @@ async function getListings(req: Request, res: Response, next: NextFunction) {
     try {
         const collection = await mongoose.connection.db.collection('listing');
         const listings = await collection.find({}).toArray();
-
-        // Create a new GridFSBucket instance
-        const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-            bucketName: 'images'
-        });
-
-        // Retrieve image data for each listing
-        const listingsWithImages = await Promise.all(
-            listings.map(async (listing) => {
-                const imageIds = listing.images.map(
-                    (id: any) => new mongoose.Types.ObjectId(id)
-                );
-
-                const images = await bucket
-                    .find({ _id: { $in: imageIds } })
-                    .toArray();
-
-                const imageData = await Promise.all(
-                    images.map(async (image: any) => {
-                        const readStream = bucket.openDownloadStream(image._id);
-                        const data = await streamToBase64(readStream);
-                        return {
-                            filename: image.filename,
-                            contentType: image.metadata.contentType,
-                            data
-                        };
-                    })
-                );
-
-                return {
-                    ...listing,
-                    images: imageData
-                };
-            })
-        );
-
-        res.status(200).json({ listings: listingsWithImages });
+        res.status(200).json({ listings });
         return;
     } catch (error) {
         return next(error);
     }
-}
-
-// Helper function to convert a GridFSBucketReadStream to a base64-encoded string
-function streamToBase64(stream: GridFSBucketReadStream): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const chunks: any[] = [];
-
-        stream.on('data', (chunk) => {
-            chunks.push(chunk);
-        });
-
-        stream.on('end', () => {
-            const buffer = Buffer.concat(chunks);
-            const data = buffer.toString('base64');
-            resolve(data);
-        });
-
-        stream.on('error', (error) => {
-            reject(error);
-        });
-    });
 }
 
 async function getListing(req: Request, res: Response, next: NextFunction) {
@@ -358,128 +311,8 @@ router.post(
     '/user/listings',
     rateLimiter({ windowMs: 1000, max: 1 }),
     verifyToken,
-    multi_upload.array('kikaoimage', 4),
+    multi_upload.array('kikaoimage', 8),
     fileSizeLimitErrorHandler,
-    [
-        check('title')
-            .not()
-            .isEmpty()
-            .withMessage('Title should not be empty')
-            .trim()
-            .isLength({ min: 4 })
-            .withMessage('Title must be at least 4 characters long'),
-        check('Id')
-            .not()
-            .isEmpty()
-            .withMessage('Id should not be empty')
-            .trim()
-            .isLength({ min: 10 }),
-        check('location')
-            .not()
-            .isEmpty()
-            .withMessage('Location should not be empty')
-            .trim()
-            .isLength({ min: 4 })
-            .withMessage('Location must be at least 4 characters long'),
-        check('price')
-            .not()
-            .isEmpty()
-            .withMessage('Price should not be empty')
-            .isNumeric()
-            .withMessage('Price must be a number'),
-
-        check('bedrooms')
-            .not()
-            .isEmpty()
-            .withMessage('Bedrooms should not be empty')
-            .trim(),
-
-        check('duration')
-            .not()
-            .isEmpty()
-            .withMessage('Duration should not be empty')
-            .trim(),
-
-        check('size')
-            .not()
-            .isEmpty()
-            .withMessage('Size should not be empty')
-            .trim(),
-
-        check('washrooms')
-            .not()
-            .isEmpty()
-            .withMessage('Washrooms should not be empty')
-            .isNumeric()
-            .withMessage('Washrooms must be a number'),
-
-        check('totalrooms')
-            .not()
-            .isEmpty()
-            .withMessage('Total rooms should not be empty')
-            .trim()
-            .isNumeric()
-            .withMessage('Total rooms must be a number'),
-
-        check('county')
-            .not()
-            .isEmpty()
-            .withMessage('County should not be empty')
-            .trim()
-            .isLength({ min: 4 })
-            .withMessage('County must be at least 4 characters long'),
-        check('parking')
-            .not()
-            .isEmpty()
-            .withMessage('Parking should not be empty')
-            .isBoolean()
-            .withMessage('Parking must be a boolean'),
-
-        check('wifi')
-            .not()
-            .isEmpty()
-            .withMessage('WIFI should not be empty')
-            .isBoolean()
-            .withMessage('WIFI must be a boolean'),
-
-        check('garbagecollection')
-            .not()
-            .isEmpty()
-            .withMessage('Garbage collection should not be empty')
-            .isBoolean()
-            .withMessage('Garbage collection must be a boolean'),
-
-        check('roomnumber')
-            .not()
-            .isEmpty()
-            .withMessage('Room number should not be empty')
-            .isBoolean()
-            .withMessage('Room number must be a boolean'),
-
-        check('description')
-            .not()
-            .isEmpty()
-            .withMessage('Description should not be empty')
-            .trim()
-            .isLength({ min: 20 })
-            .withMessage('Description must be at least 20 characters long'),
-
-        check('security')
-            .not()
-            .isEmpty()
-            .withMessage('Security should not be empty')
-            .isBoolean()
-            .withMessage('Security must be a boolean'),
-        check('year')
-            .not()
-            .isEmpty()
-            .withMessage('Year should not be empty')
-            .trim()
-            .isLength({ max: 4 })
-            .withMessage('Year must be 4 characters long')
-            .custom((value) => !/\s/.test(value))
-            .withMessage('No spaces are allowed in the username')
-    ],
     createUserListing
 );
 router.put(

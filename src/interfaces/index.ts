@@ -1,5 +1,39 @@
+import * as z from 'zod';
 import { ObjectID } from 'bson';
 import { number, string, object, size } from 'superstruct';
+
+export const schema = z.object({
+    title: z.string().min(4).nonempty().max(50),
+    Id: z.string().min(10).nonempty(),
+    location: z.string().min(4).nonempty().max(50),
+    price: z.number().min(0),
+    bedrooms: z.string().nonempty(),
+    duration: z.string().nonempty(),
+    size: z.string().nonempty(),
+    washrooms: z.number().min(0),
+    totalrooms: z.number().min(0),
+    county: z.string().min(4).nonempty(),
+    parking: z.boolean(),
+    wifi: z.boolean(),
+    garbagecollection: z.boolean(),
+    roomnumber: z.boolean(),
+    description: z.string().min(20).nonempty(),
+    security: z.boolean(),
+    year: z.string().min(4).max(4).regex(/^\S*$/)
+});
+
+export interface IResponse {
+    isSuccess: boolean;
+    message: string;
+    statusCode: number;
+}
+export interface ICloudinaryResponse extends IResponse {
+    imageURL?: string;
+}
+
+export interface ICloudinary {
+    uploadImage: (imageToUpload: string) => Promise<ICloudinaryResponse>;
+}
 
 export interface IUser {
     userId: string;
@@ -34,13 +68,24 @@ export interface IDB extends IUser, IRole {
     role: IRole;
 }
 
+export interface File {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    destination: string;
+    filename: string;
+    path: string;
+    size: number;
+}
+
 export interface houseSchema {
     id: string;
     userId: string;
     name: string;
     location: string;
     county: string;
-    images: ObjectID[];
+    images: string[];
     rate: {
         price: number;
         duration: string;

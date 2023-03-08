@@ -38,10 +38,10 @@ async function getListingAuthor(
             email: existingUser.email,
             kikaoType: existingUser.kikaoType,
             date: existingUser.date,
+            phone: existingUser.phone,
             business: {
                 name: existingUser.business.name,
                 location: existingUser.business.location,
-                phone: existingUser.business.phone,
                 businessType: existingUser.business.businessType,
                 city: existingUser.business.city
             }

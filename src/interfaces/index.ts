@@ -136,10 +136,10 @@ export type userPublisher = {
     kikaoType: string;
     date: Date;
     password: string;
+    phone: string;
     business: {
         name: string;
         location: string;
-        phone: string;
         businessType: string;
         city: string;
     };

@@ -145,7 +145,6 @@ async function createUserListing(
                 uploadUrls.push(imageURL);
             }
         }
-        console.log(req.files);
         const imageUrls = await uploadUrls;
 
         const listingId = nanoid();

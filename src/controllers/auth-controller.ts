@@ -54,6 +54,22 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
         const hashedPass = await hashPassword(password);
         //TODO: not sure if we should hash the phone number too, what's you think 🤔 ?
         const userId = nanoid();
+
+        const collection = await mongoose.connection.db.collection('kikao');
+        const existingUserByEmail = await collection.findOne({ email: email });
+        const existingUserByPhone = await collection.findOne({ phone: phone });
+
+        if (existingUserByEmail) {
+            return res.status(400).json({
+                message: 'Email is already registered'
+            });
+        }
+
+        if (existingUserByPhone) {
+            return res.status(400).json({
+                message: 'Phone number is already registered'
+            });
+        }
         let avatarUrl = '';
 
         if (req.file) {
@@ -81,22 +97,6 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
                 city: !city ? '' : city
             }
         };
-
-        const collection = await mongoose.connection.db.collection('kikao');
-        const existingUserByEmail = await collection.findOne({ email: email });
-        const existingUserByPhone = await collection.findOne({ phone: phone });
-
-        if (existingUserByEmail) {
-            return res.status(400).json({
-                message: 'Email is already registered'
-            });
-        }
-
-        if (existingUserByPhone) {
-            return res.status(400).json({
-                message: 'Phone number is already registered'
-            });
-        }
         const result = await collection.insertOne(userItem);
         console.log(result);
         if (!result.acknowledged) {

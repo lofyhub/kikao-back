@@ -2,10 +2,18 @@ import { NextFunction, Request, Response, Router } from 'express';
 import mongoose, { ConnectOptions } from 'mongoose';
 import { hashPassword, comparePassword } from '../utilities/helpers';
 import { rateLimit } from 'express-rate-limit';
-import { signToken } from '../utilities/helpers';
+import multer from 'multer';
+import {
+    multerStorage,
+    fileFilter,
+    fileSizeLimitErrorHandler,
+    signToken
+} from '../utilities/helpers';
 import { Ipayload, IUser } from '../interfaces';
 import { nanoid } from 'nanoid';
 import { check, validationResult } from 'express-validator';
+import { cloudinaryInstance } from '../utilities/cloudinary';
+import { validateFormFields } from '../utilities/zod';
 const uri =
     'mongodb+srv://kikao:9zmZyT0ZMcTActQV@kikao.vsuckcx.mongodb.net/?retryWrites=true&w=majority';
 
@@ -20,46 +28,60 @@ mongoose.connect(uri, options);
 
 const router = Router();
 
-async function signUp(req: Request, res: Response, next: NextFunction) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        res.status(422).json({ message: errors.array() });
-        return;
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 1024 * 1024 * 1
     }
-    const {
-        email,
-        password,
-        username,
-        kikaotype,
-        businesname,
-        location,
-        phone,
-        businessType,
-        city
-    } = req.body;
+});
 
-    const date = new Date();
-    const hashedPass = await hashPassword(password);
-    //TODO: not sure if we should hash the phone number too, what's you think 🤔 ?
-    const userId = nanoid();
-
-    const userItem: IUser = {
-        userId: userId,
-        username: username,
-        email: email,
-        kikaoType: kikaotype,
-        password: hashedPass,
-        date: date,
-        phone: phone,
-        business: {
-            name: !businesname ? username : businesname,
-            location: !location ? '' : location,
-            businessType: !businessType ? '' : kikaotype,
-            city: !city ? '' : city
-        }
-    };
-
+async function signUp(req: Request, res: Response, next: NextFunction) {
     try {
+        const {
+            email,
+            password,
+            username,
+            kikaotype,
+            businesname,
+            location,
+            phone,
+            businessType,
+            city
+        } = req.body;
+        await validateFormFields(req.body);
+        const date = new Date();
+        const hashedPass = await hashPassword(password);
+        //TODO: not sure if we should hash the phone number too, what's you think 🤔 ?
+        const userId = nanoid();
+        let avatarUrl = '';
+
+        if (req.file) {
+            const { imageURL } = await cloudinaryInstance.uploadImage(
+                req.file.path
+            );
+            if (imageURL) {
+                avatarUrl = imageURL;
+            }
+        }
+
+        const userItem: IUser = {
+            userId: userId,
+            username: username,
+            email: email,
+            kikaoType: kikaotype,
+            password: hashedPass,
+            profileImage: avatarUrl,
+            date: date,
+            phone: phone,
+            business: {
+                name: !businesname ? username : businesname,
+                location: !location ? '' : location,
+                businessType: !businessType ? '' : kikaotype,
+                city: !city ? '' : city
+            }
+        };
+
         const collection = await mongoose.connection.db.collection('kikao');
         const existingUserByEmail = await collection.findOne({ email: email });
         const existingUserByPhone = await collection.findOne({ phone: phone });
@@ -146,32 +168,8 @@ router.post(
         windowMs: 1000,
         max: 1
     }),
-    [
-        check('username')
-            .not()
-            .isEmpty()
-            .isLength({ min: 4 })
-            .withMessage('the name must have minimum length of 4')
-            .trim(),
-        check('kikaotype')
-            .not()
-            .isEmpty()
-            .withMessage('kikaotype is required')
-            .trim(),
-        check('phone')
-            .not()
-            .isEmpty()
-            .withMessage('Phone number is required')
-            .isNumeric()
-            .isLength({ min: 10 })
-            .withMessage('Phone number must be a minimum of 10')
-            .trim(),
-        check('email').isEmail().withMessage('Invalid email address'),
-        check('password')
-            .isLength({ min: 4 })
-            .withMessage('Password must be at least 4 characters long')
-            .trim()
-    ],
+    upload.single('avatarimage'),
+    fileSizeLimitErrorHandler,
     signUp
 );
 router.post(

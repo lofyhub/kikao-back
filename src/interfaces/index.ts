@@ -41,6 +41,7 @@ export interface IUser {
     email: string;
     kikaoType: string;
     password: string;
+    profileImage: string;
     date: Date;
     phone: string;
     business: {

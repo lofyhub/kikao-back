@@ -1,3 +1,5 @@
+import { NextFunction, Request, Response } from 'express';
+import multer from 'multer';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Ipayload } from '../interfaces';
@@ -35,3 +37,57 @@ export async function signToken(payload: Ipayload): Promise<string> {
     });
     return signedJwt;
 }
+
+export const multerStorage = multer.diskStorage({
+    destination: (request, file, callback) => {
+        callback(null, __dirname);
+    },
+
+    filename: (request, file, callback) => {
+        callback(null, file.originalname);
+    }
+});
+
+export const fileSizeLimitErrorHandler = (
+    err: any,
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    if (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(418).json({ error: err.message });
+        }
+
+        // Check for file size limit exceeded error
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ error: 'File size limit exceeded' });
+        }
+
+        // Check for total size limit exceeded error
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(413).json({ error: 'Total size limit exceeded' });
+        }
+
+        return res.status(500).json({ error: 'Server error' });
+    }
+
+    return next();
+};
+
+export const fileFilter = (
+    req: Request,
+    file: { mimetype: string },
+    cb: (arg0: null, arg1: boolean) => void
+) => {
+    // filter filetype to store
+    if (
+        file.mimetype == 'image/png' ||
+        file.mimetype == 'image/jpg' ||
+        file.mimetype == 'image/jpeg'
+    ) {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};

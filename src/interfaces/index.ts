@@ -137,6 +137,7 @@ export type userPublisher = {
     kikaoType: string;
     date: Date;
     password: string;
+    profileImage: string;
     phone: string;
     business: {
         name: string;

@@ -38,6 +38,7 @@ async function getListingAuthor(
             email: existingUser.email,
             kikaoType: existingUser.kikaoType,
             date: existingUser.date,
+            profileImage: existingUser.profileImage,
             phone: existingUser.phone,
             business: {
                 name: existingUser.business.name,

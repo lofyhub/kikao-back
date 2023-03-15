@@ -62,6 +62,21 @@ export interface JwtPayload {
     iat: number;
     exp: number;
 }
+export interface IUserSignIn {
+    _id: ObjectID;
+    userId: string;
+    username: string;
+    email: string;
+    regDate: Date;
+    kikaotype: string;
+    telNumber: string;
+}
+
+export interface IAuthResponse {
+    auth: boolean;
+    token: string;
+    user: IUserSignIn;
+}
 
 export interface IDB extends IUser, IRole {
     user: IUser;

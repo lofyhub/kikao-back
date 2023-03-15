@@ -9,7 +9,7 @@ import {
     fileSizeLimitErrorHandler,
     signToken
 } from '../utilities/helpers';
-import { Ipayload, IUser } from '../interfaces';
+import { Ipayload, IUser, IUserSignIn, IAuthResponse } from '../interfaces';
 import { nanoid } from 'nanoid';
 import { cloudinaryInstance } from '../utilities/cloudinary';
 import { validateFormFields, validateSignInFields } from '../utilities/zod';
@@ -137,7 +137,7 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
         const token = await signToken(payload);
 
         // exclude sensitive data to send to client i.e hashedpassword
-        const user = {
+        const user: IUserSignIn = {
             _id: existingUser._id,
             userId: existingUser.userId,
             username: existingUser.username,
@@ -146,9 +146,9 @@ async function signIn(req: Request, res: Response, next: NextFunction) {
             kikaotype: existingUser.kikaoType,
             telNumber: existingUser.phone
         };
-        return res
-            .status(200)
-            .json({ auth: true, token: token, user: { ...user } });
+
+        const authResponse: IAuthResponse = { auth: true, token, user };
+        return res.status(200).json(authResponse);
     } catch (error) {
         next(error);
         return;

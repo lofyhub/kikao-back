@@ -11,9 +11,8 @@ import {
 } from '../utilities/helpers';
 import { Ipayload, IUser } from '../interfaces';
 import { nanoid } from 'nanoid';
-import { check, validationResult } from 'express-validator';
 import { cloudinaryInstance } from '../utilities/cloudinary';
-import { validateFormFields } from '../utilities/zod';
+import { validateFormFields, validateSignInFields } from '../utilities/zod';
 const uri =
     'mongodb+srv://kikao:9zmZyT0ZMcTActQV@kikao.vsuckcx.mongodb.net/?retryWrites=true&w=majority';
 
@@ -98,7 +97,6 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
             }
         };
         const result = await collection.insertOne(userItem);
-        console.log(result);
         if (!result.acknowledged) {
             return res.status(400).json({
                 message: 'Error saving new user to the database'
@@ -112,14 +110,10 @@ async function signUp(req: Request, res: Response, next: NextFunction) {
 }
 
 async function signIn(req: Request, res: Response, next: NextFunction) {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-        return res.status(422).json({ errors: errors.array() });
-    }
-
     try {
         const { email, password } = req.body;
+
+        await validateSignInFields(req.body);
         const collection = await mongoose.connection.db.collection('kikao');
         const existingUser = await collection.findOne({ email: email });
         if (existingUser === null) {
@@ -178,19 +172,6 @@ router.post(
         windowMs: 1000,
         max: 1
     }),
-    [
-        check('email')
-            .isEmail()
-            .withMessage('Invalid email address')
-            .custom((value) => !/\s/.test(value))
-            .withMessage('No spaces are allowed in the username'),
-        check('password')
-            .isLength({ min: 4 })
-            .withMessage('Password must be at least 4 characters long')
-            .trim()
-            .custom((value) => !/\s/.test(value))
-            .withMessage('No spaces are allowed in the username')
-    ],
     signIn
 );
 

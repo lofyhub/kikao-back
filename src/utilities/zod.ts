@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { Review } from '../interfaces/index';
 
 interface FormFields {
     username: string;
@@ -37,4 +38,16 @@ const signInSchema = z.object({
 
 export function validateSignInFields(fields: signInField) {
     signInSchema.parse(fields);
+}
+const reviewSchema = z.object({
+    house_id: z.string().min(10).max(30),
+    name: z.string().min(4).max(30),
+    user_id: z.string().min(10).max(30),
+    rating: z.number().min(1).max(5),
+    comment: z.string().min(10).max(1000),
+    listing_author_id: z.string().min(10).max(30)
+});
+
+export function validateReviews(review: Review) {
+    reviewSchema.parse(review);
 }

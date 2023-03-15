@@ -1,6 +1,5 @@
 import * as z from 'zod';
 import { ObjectID } from 'bson';
-import { number, string, object, size } from 'superstruct';
 
 export const schema = z.object({
     title: z.string().min(4).nonempty().max(50),
@@ -164,11 +163,11 @@ export type userPublisher = {
 
 export type UserPublisherWithoutPassword = Omit<userPublisher, 'password'>;
 
-export const reviewSchema = object({
-    house_id: size(string(), 10, 30),
-    name: size(string(), 4, 30),
-    user_id: size(string(), 10, 30),
-    rating: size(number(), 1, 5),
-    comment: size(string(), 10, 200),
-    listing_author_id: size(string(), 10, 30)
-});
+export interface Review {
+    house_id: string;
+    name: string;
+    user_id: string;
+    rating: number;
+    comment: string;
+    listing_author_id: string;
+}

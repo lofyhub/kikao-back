@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
-import { is, validate } from 'superstruct';
 import rateLimiter from '../middlewares/rate_limit';
-import { FatalError, ValidationError } from '../utilities/errors';
-import { reviewSchema } from '../interfaces/index';
+import { FatalError } from '../utilities/errors';
+import { validateReviews } from '../utilities/zod';
 
 import { verifyToken } from '../middlewares/verifyToken';
 
@@ -11,15 +10,18 @@ const router = Router();
 
 async function saveReviews(req: Request, res: Response, next: NextFunction) {
     try {
-        const { data } = req.body;
+        const { house_id, user_id, rating, comment, listing_author_id, name } =
+            req.body;
+        const data = {
+            house_id: house_id,
+            user_id: user_id,
+            rating: rating,
+            comment: comment,
+            listing_author_id: listing_author_id,
+            name: name
+        };
 
-        if (!is(data, reviewSchema)) {
-            const [error] = validate(data, reviewSchema);
-            if (!error) {
-                throw new FatalError('Unexpected condition!');
-            }
-            throw new ValidationError(error.message);
-        }
+        await validateReviews(data);
         const created_at = new Date();
 
         const collection = await mongoose.connection.db.collection('reviews');
@@ -56,7 +58,7 @@ async function getListingReviews(
 
 router.post(
     '/reviews/',
-    rateLimiter({ windowMs: 1000, max: 1 }),
+    rateLimiter({ windowMs: 300000, max: 1 }),
     verifyToken,
     saveReviews
 );

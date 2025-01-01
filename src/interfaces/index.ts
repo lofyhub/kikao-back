@@ -1,9 +1,7 @@
 import * as z from 'zod';
-import { ObjectID } from 'bson';
 
-export const schema = z.object({
+export const listingSchema = z.object({
     title: z.string().min(4).nonempty().max(50),
-    Id: z.string().min(10).nonempty(),
     location: z.string().min(4).nonempty().max(50),
     price: z.number().min(0),
     bedrooms: z.string().nonempty(),
@@ -34,23 +32,6 @@ export interface ICloudinary {
     uploadImage: (imageToUpload: string) => Promise<ICloudinaryResponse>;
 }
 
-export interface IUser {
-    userId: string;
-    username: string;
-    email: string;
-    kikaoType: string;
-    password: string;
-    profileImage: string;
-    date: Date;
-    phone: string;
-    business: {
-        name: string;
-        location: string;
-        businessType: string;
-        city: string;
-    };
-}
-
 export interface IRole {
     name: string;
 }
@@ -62,7 +43,7 @@ export interface JwtPayload {
     exp: number;
 }
 export interface IUserSignIn {
-    _id: ObjectID;
+    _id: string;
     userId: string;
     username: string;
     email: string;
@@ -77,12 +58,6 @@ export interface IAuthResponse {
     user: IUserSignIn;
 }
 
-export interface IDB extends IUser, IRole {
-    user: IUser;
-    mongoose: any;
-    role: IRole;
-}
-
 export interface File {
     fieldname: string;
     originalname: string;
@@ -94,41 +69,48 @@ export interface File {
     size: number;
 }
 
-export interface houseSchema {
+export type HouseSchema = {
     id: string;
-    userId: string;
+    user_id: string;
     name: string;
     location: string;
     county: string;
     images: string[];
-    rate: {
-        price: number;
-        duration: string;
-        countryCode: string;
-    };
-    compartments: {
-        bedrooms: number;
-        totalRooms: string;
-        washRooms: number;
-        parking: boolean;
-        roomNumber: boolean;
-        security: boolean;
-        garbageCollection: boolean;
-        WIFI: boolean;
-    };
+    rates: Rate;
+    compartments: Compartments;
     size: string;
-    createdAt: Date;
     status: string;
-    yearBuild: string;
+    year_built: string;
     description: string;
+    created_at: Date;
+    updated_at: Date;
+};
+
+export interface Rate {
+    price: number;
+    duration: string;
+    countryCode: string;
+    listing_id: string;
+}
+
+export interface Compartments {
+    listing_id: string;
+    bedrooms: number;
+    totalRooms: string;
+    washRooms: number;
+    parking: boolean;
+    roomNumber: boolean;
+    security: boolean;
+    garbageCollection: boolean;
+    wifi: boolean;
 }
 
 export interface Ipayload {
-    userId: string;
+    user_id: string;
     email: string;
 }
 
-export interface ExtendedHouseSchema extends houseSchema {
+export interface ExtendedHouseSchema extends HouseSchema {
     _id: string;
 }
 export interface booking {
@@ -141,10 +123,8 @@ export interface booking {
     bookedById: string;
 }
 
-type ObjectId = ObjectID;
-
 export type userPublisher = {
-    _id: ObjectId;
+    _id: string;
     userId: string;
     username: string;
     email: string;
@@ -153,21 +133,31 @@ export type userPublisher = {
     password: string;
     profileImage: string;
     phone: string;
-    business: {
-        name: string;
-        location: string;
-        businessType: string;
-        city: string;
-    };
+    gender: 'male' | 'female' | 'other' | 'unknown';
+    business_name: string;
+    business_location: string;
+    business_type: string;
+    business_city: string;
 };
 
 export type UserPublisherWithoutPassword = Omit<userPublisher, 'password'>;
 
-export interface Review {
+export interface IReview {
     house_id: string;
     name: string;
     user_id: string;
     rating: number;
     comment: string;
     listing_author_id: string;
+}
+
+export interface JWTUserPayload {
+    id: string;
+    username: string;
+    email: string;
+    providerID: string;
+    profileImage: string | null;
+    provider: string;
+    iat: number; // Issued at time
+    exp?: number; // Optional expiration time
 }

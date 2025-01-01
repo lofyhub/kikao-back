@@ -7,7 +7,7 @@ export default function errorHandler<T extends Error>(
     req: Request,
     res: Response,
     next: NextFunction
-) {
+): any {
     debug(err.message);
     const name = err.name;
 
@@ -17,7 +17,6 @@ export default function errorHandler<T extends Error>(
             error: 'Internal Server Error'
         });
         next();
-        return;
     }
     switch (name) {
         case ErrorType.NotFoundError:

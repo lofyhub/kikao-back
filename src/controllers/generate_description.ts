@@ -26,14 +26,14 @@ async function generateDescription(
                 model: 'gpt-4o'
             })
             .then((response: any) => {
-                let res_body = createSuccessResponse(
+                const res_body = createSuccessResponse(
                     'Generated description successfully ',
                     response.choices[0].message
                 );
                 return res.status(200).json(res_body);
             })
             .catch((err: any) => {
-                let res_body = createErrorResponse(
+                const res_body = createErrorResponse(
                     'Failed to generate description',
                     err as string
                 );

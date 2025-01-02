@@ -15,7 +15,7 @@ async function getListingAuthor(
 ): Promise<any> {
     const { id } = req.body;
     if (!id) {
-        let message = 'Id is required';
+        const message = 'Id is required';
         return res.status(403).json(createErrorResponse(message));
     }
 
@@ -26,14 +26,14 @@ async function getListingAuthor(
         const existingUser = await User.getUserById(id);
 
         if (!existingUser) {
-            let res_body = createErrorResponse(
+            const res_body = createErrorResponse(
                 'Listing author with the given ID was not found'
             );
 
             return res.status(300).json(res_body);
         }
 
-        let res_body = createSuccessResponse('Successful', existingUser);
+        const res_body = createSuccessResponse('Successful', existingUser);
 
         return res.status(200).json(res_body);
     } catch (error) {
@@ -55,7 +55,7 @@ async function getUserListings(
     try {
         const userListings = await Listing.getUserListings(Id);
 
-        let res_body = createSuccessResponse('Successful', {
+        const res_body = createSuccessResponse('Successful', {
             userListings,
             count: userListings.length
         });

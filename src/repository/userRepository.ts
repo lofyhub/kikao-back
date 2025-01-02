@@ -22,7 +22,7 @@ class UserRepository {
     }
     async updateUser(user_id: string, userData: BusinessInfo): Promise<User> {
         try {
-            let user_to_update = await this.getUserById(user_id);
+            const user_to_update = await this.getUserById(user_id);
 
             if (!user_to_update) {
                 throw new Error('User not found');

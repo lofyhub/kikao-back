@@ -9,7 +9,7 @@ async function healthCheck(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    let data = {
+    const data = {
         mood: 'Feeling awesome! 😎',
         timestamp: new Date().toISOString()
     };

@@ -55,7 +55,7 @@ async function createUserListing(
 
     // TODO: Ensure a user can only post a listing with his Id and not anyone elses
     // Also here we are quite sure we have the user id from the token
-    let user_id: string = (req.user as JWTUserPayload).id;
+    const user_id: string = (req.user as JWTUserPayload).id;
 
     if (userId !== user_id) {
         return res
@@ -140,7 +140,7 @@ async function deleteListing(
 ): Promise<any> {
     const { account_id, user_id } = req.body;
 
-    let userId: string = (req.user as JWTUserPayload).id;
+    const userId: string = (req.user as JWTUserPayload).id;
 
     if (userId !== user_id) {
         return res
@@ -219,7 +219,7 @@ async function updateListing(
         wifi
     } = req.body;
 
-    let user_id: string = (req.user as JWTUserPayload).id;
+    const user_id: string = (req.user as JWTUserPayload).id;
 
     if (userId !== user_id) {
         return res

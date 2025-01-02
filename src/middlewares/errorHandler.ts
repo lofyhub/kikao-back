@@ -33,7 +33,7 @@ export function errorHandler(
                 createErrorResponse('Multer error', err as unknown as string)
             );
     } else if (err instanceof PostgresError) {
-        let message = createErrorResponse(
+        const message = createErrorResponse(
             'Errod occured on our End',
             undefined,
             'PGError'

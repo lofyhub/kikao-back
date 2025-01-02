@@ -4,7 +4,7 @@ import { AuthStrategy, Gender } from '../interfaces/user';
 import { NewUser } from '../db/schema';
 import env from '../env';
 
-var GoogleStrategy = require('passport-google-oauth20').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 export interface GoogleProfile {
     id: string;

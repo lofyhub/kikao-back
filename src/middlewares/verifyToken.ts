@@ -19,7 +19,7 @@ export async function verifyJWTToken(
     }
 
     try {
-        let res = jwt.verify(token, env.JWT_SECRET) as JWTUserPayload;
+        const res = jwt.verify(token, env.JWT_SECRET) as JWTUserPayload;
         req.user = res;
         return next();
     } catch (error) {

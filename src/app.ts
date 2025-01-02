@@ -58,7 +58,7 @@ app.use('/api/v1/', listingsController);
 app.use('/api/v1/', descriptionController);
 app.use('/api/v1/', bookmarkController);
 app.use(function (req, res, next) {
-    let response = createErrorResponse(
+    const response = createErrorResponse(
         "404: Route not found! Looks like you've taken a wrong turn in the web maze."
     );
 

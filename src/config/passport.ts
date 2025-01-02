@@ -1,6 +1,6 @@
 import passport from 'passport';
 import userRepository from '../repository/userRepository';
-import { AuthStrategy, Gender } from '../interfaces/user';
+import { AuthStrategy } from '../interfaces/user';
 import { NewUser } from '../db/schema';
 import env from '../env';
 
@@ -38,7 +38,7 @@ passport.use(
         {
             clientID: env.GOOGLE_CLIENT_ID,
             clientSecret: env.GOOGLE_CLIENT_SECRET,
-            callbackURL: 'http://localhost:9000/api/v1/oauth/google/callback',
+            callbackURL: env.GOOGLE_APP_OAUTH_REDIRECT,
             scope: ['profile', 'email']
         },
         verify

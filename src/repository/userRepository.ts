@@ -1,4 +1,4 @@
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { AuthStrategy } from '../interfaces/user';
 import { db } from '../db';
 import { users, User, NewUser } from '../db/schema';
@@ -35,7 +35,8 @@ class UserRepository {
                 .returning();
 
             return updated_user[0];
-        } catch (error) {
+        } catch (error:unknown) {
+            console.log("Error updating user: ", error);
             throw new Error('Error updating user');
         }
     }
@@ -54,7 +55,7 @@ class UserRepository {
                     )
                 );
             return result.length === 0 ? null : result[0];
-        } catch (error) {
+        } catch (error:unknown) {
             console.log('Error getting user by strategy and account id', error);
             return null;
         }

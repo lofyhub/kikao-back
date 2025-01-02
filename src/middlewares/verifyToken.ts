@@ -9,7 +9,7 @@ export async function verifyJWTToken(
     req: Request,
     res: Response,
     next: NextFunction
-): Promise<any> {
+): Promise<Response | void> {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -22,7 +22,7 @@ export async function verifyJWTToken(
         const res = jwt.verify(token, env.JWT_SECRET) as JWTUserPayload;
         req.user = res;
         return next();
-    } catch (error) {
+    } catch (_error:unknown) {
         return res
             .status(400)
             .json(createErrorResponse('Invalid or expired token.'));

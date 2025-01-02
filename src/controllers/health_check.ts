@@ -11,12 +11,14 @@ async function healthCheck(
 ): Promise<any> {
     const data = {
         mood: 'Feeling awesome! 😎',
+        NODE_ENV: env.NODE_ENV,
+        API_VERSION: 'api/v1',
         timestamp: new Date().toISOString()
     };
     const message =
-        'All systems are go! 🚀 The server is healthy and thriving.';
+        'All systems are go! 🚀';
 
-    res.status(200).json(createSuccessResponse(message, data));
+    return res.status(200).json(createSuccessResponse(message, data));
 }
 
 router.get('/health', healthCheck);

@@ -10,9 +10,7 @@ import {
     integer,
     pgEnum
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import z from 'zod';
+import { createSelectSchema } from 'drizzle-zod';
 
 export const provider = pgEnum('provider', [
     'google',

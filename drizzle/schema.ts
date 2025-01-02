@@ -10,7 +10,6 @@ import {
     integer,
     pgEnum
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 export const gender = pgEnum('gender', [
     'male',

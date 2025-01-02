@@ -1,6 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
 import env from '../env';
-import { createErrorResponse } from './responseUtils';
 import jwt from 'jsonwebtoken';
 import { User } from '../db/schema';
 

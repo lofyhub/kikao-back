@@ -1,5 +1,6 @@
-// Check File Type
-export function checkImageUploadFileType(file: any, cb: any) {
+import multer, { FileFilterCallback } from "multer";
+
+export function checkImageUploadFileType(file: Express.Multer.File, cb:FileFilterCallback) {
     // Allowed ext
     const filetypes = /jpeg|jpg|png|gif/;
     // Check ext
@@ -10,6 +11,6 @@ export function checkImageUploadFileType(file: any, cb: any) {
     if (mimetype && extname) {
         return cb(null, true);
     } else {
-        cb('Error: jpeg, jpg, png, gif Images Only!');
+        cb(new Error('Error: jpeg, jpg, png, gif Images Only!'));
     }
 }

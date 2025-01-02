@@ -1,5 +1,3 @@
-import { Request, Response, NextFunction } from 'express';
-
 interface SuccessResponse<T = null> {
     status: 'success';
     message: string;

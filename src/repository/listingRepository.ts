@@ -2,7 +2,7 @@ import { db } from '../db';
 import { listings, Listing, NewListing, NewRate } from '../db/schema';
 import { compartments, NewCompartment } from '../db/schema';
 import { rates } from '../db/schema';
-import { eq, and, SQL } from 'drizzle-orm';
+import { eq, and, SQL, TableConfig } from 'drizzle-orm';
 import {
     NotFoundError,
     UpdateFailedError,
@@ -15,34 +15,13 @@ import {
     NewRateWithoutListingId,
     UpdateListing
 } from '../interfaces/listing';
+import { PgTable } from 'drizzle-orm/pg-core';
 
 export interface Filters {
     price?: number;
     county?: string;
     size?: string;
 }
-
-const allowedFields: (keyof UpdateListing)[] = [
-    'name',
-    'location',
-    'status',
-    'county',
-    'yearBuilt',
-    'description',
-    'size',
-    'ratesId',
-    'price',
-    'duration',
-    'compartmentsId',
-    'bedrooms',
-    'totalRooms',
-    'washRooms',
-    'parking',
-    'roomNumber',
-    'security',
-    'garbageCollection',
-    'wifi'
-];
 
 class ListingRepository {
     async filteredListing(filters: Filters): Promise<any> {
@@ -201,7 +180,7 @@ class ListingRepository {
         };
 
         // Start the transaction
-        const result = await db.transaction(async (trx) => {
+        const result = await db.transaction(async (_trx) => {
             await updateTable(
                 listings,
                 filteredListingData,

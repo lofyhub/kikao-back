@@ -13,7 +13,6 @@ export function errorHandler(
     err: Error,
     req: Request,
     res: Response,
-    _next: NextFunction
 ): any {
     console.error(err); // Log the error for internal debugging
 
@@ -33,12 +32,12 @@ export function errorHandler(
                 createErrorResponse('Multer error', err as unknown as string)
             );
     } else if (err instanceof PostgresError) {
-        const message = createErrorResponse(
+        const res_body = createErrorResponse(
             'Errod occured on our End',
             undefined,
             'PGError'
         );
-        return res.status(400).json(message);
+        return res.status(400).json(res_body);
     } else {
         // Handle unexpected errors
         return res

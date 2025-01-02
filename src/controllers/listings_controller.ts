@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import multer from 'multer';
-import { listingSchema, File, JWTUserPayload } from '../interfaces';
+import {File, JWTUserPayload } from '../interfaces';
 import { cloudinaryInstance } from '../utils/cloudinary';
 import listingRepository, { Filters } from '../repository/listingRepository';
-import { NewCompartment, NewListing, NewRate } from '../db/schema';
+import { NewListing} from '../db/schema';
 import {
     createErrorResponse,
     createSuccessResponse
@@ -23,7 +23,9 @@ const multerStorage = multer.memoryStorage();
 
 const multi_upload = multer({
     limits: { fileSize: env.IMAGE_UPLOAD_SIZE_LIMIT }, // fileSize (in bytes)
-    fileFilter: checkImageUploadFileType,
+    fileFilter: (req: Request, file: Express.Multer.File, callback: multer.FileFilterCallback) => {
+        checkImageUploadFileType(file, callback);
+    },
     storage: multerStorage
 }).array('listing_images', 8);
 

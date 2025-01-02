@@ -1,6 +1,4 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { FatalError, NotFoundError } from '../utils/errors';
-import { validateReviews } from '../utils/zod';
 import reviewRepository from '../repository/reviewRepository';
 import {
     createErrorResponse,

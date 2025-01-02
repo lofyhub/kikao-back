@@ -12,7 +12,8 @@ import {
 import {
     ListingWithRatesAndCompartments,
     NewCompartmentWithoutListingId,
-    NewRateWithoutListingId
+    NewRateWithoutListingId,
+    UpdateListing
 } from '../interfaces/listing';
 
 export interface Filters {
@@ -20,6 +21,28 @@ export interface Filters {
     county?: string;
     size?: string;
 }
+
+const allowedFields: (keyof UpdateListing)[] = [
+    'name',
+    'location',
+    'status',
+    'county',
+    'yearBuilt',
+    'description',
+    'size',
+    'ratesId',
+    'price',
+    'duration',
+    'compartmentsId',
+    'bedrooms',
+    'totalRooms',
+    'washRooms',
+    'parking',
+    'roomNumber',
+    'security',
+    'garbageCollection',
+    'wifi'
+];
 
 class ListingRepository {
     async filteredListing(filters: Filters): Promise<any> {
@@ -100,63 +123,142 @@ class ListingRepository {
     // Update a listing by its ID
     async updateListing(
         listing_id: string,
-        data: NewListing
+        data: UpdateListing
     ): Promise<Listing | null> {
-        const result = await db
+        const {
+            ratesId,
+            price,
+            duration,
+            compartmentsId,
+            name,
+            location,
+            county,
+            status,
+            yearBuilt,
+            description,
+            size,
+            bedrooms,
+            totalRooms,
+            washRooms,
+            parking,
+            roomNumber,
+            security,
+            garbageCollection,
+            wifi
+        } = data;
+
+        const updateTable = async (
+            table: any,
+            data: any,
+            id: string,
+            field: string
+        ) => {
+            const result = await db
+                .update(table)
+                .set(data)
+                .where(eq(table.id, id));
+
+            if (!result) {
+                throw new UpdateFailedError(
+                    `No changes were made to ${field} with ID ${id}.`
+                );
+            }
+        };
+
+        const res = await db
             .select()
             .from(listings)
             .where(eq(listings.id, listing_id));
 
-        if (result.length === 0) {
+        if (res.length === 0) {
             throw new NotFoundError(`Listing with ID ${listing_id} not found.`);
         }
 
-        const allowedFields: (keyof Listing)[] = [
-            'name',
-            'location',
-            'county',
-            'status',
-            'yearBuilt',
-            'description',
-            'size'
-        ];
+        const filteredListingData = {
+            name,
+            location,
+            county,
+            status,
+            yearBuilt,
+            description,
+            size
+        };
 
-        const filteredData = Object.entries(data)
-            .filter(
-                ([key, value]) =>
-                    allowedFields.includes(key as keyof Listing) &&
-                    value !== undefined
-            )
-            .reduce((acc, [key, value]) => {
-                acc[key as keyof Listing] = Array.isArray(value)
-                    ? value
-                    : ([value] as any);
-                return acc;
-            }, {} as Partial<Listing>);
+        const filteredRateData = {
+            price,
+            duration
+        };
 
-        if (Object.keys(filteredData).length === 0) {
-            throw new UpdateFailedError(
-                `No valid fields provided for update in listing with ID ${listing_id}.`
+        const filteredCompartmentData = {
+            bedrooms,
+            totalRooms,
+            washRooms,
+            parking,
+            roomNumber,
+            security,
+            garbageCollection,
+            wifi
+        };
+
+        // Start the transaction
+        const result = await db.transaction(async (trx) => {
+            await updateTable(
+                listings,
+                filteredListingData,
+                listing_id,
+                'listing'
             );
-        }
 
-        const updated = await db
-            .update(listings)
-            .set(filteredData)
-            .where(eq(listings.id, listing_id));
+            await updateTable(rates, filteredRateData, ratesId, 'rates');
 
-        if (!updated) {
-            throw new UpdateFailedError(
-                `No changes were made to the listing with ID ${listing_id}.`
+            await updateTable(
+                compartments,
+                filteredCompartmentData,
+                compartmentsId,
+                'compartments'
             );
-        }
 
-        const updatedListing = await db
-            .select()
-            .from(listings)
-            .where(eq(listings.id, listing_id));
+            const updatedListing = await db
+                .select({
+                    id: listings.id,
+                    userId: listings.userId,
+                    name: listings.name,
+                    location: listings.location,
+                    county: listings.county,
+                    status: listings.status,
+                    yearBuilt: listings.yearBuilt,
+                    description: listings.description,
+                    size: listings.size,
+                    images: listings.images,
+                    rates: {
+                        id: rates.id,
+                        price: rates.price,
+                        duration: rates.duration
+                    },
+                    compartments: {
+                        bedrooms: compartments.bedrooms,
+                        totalRooms: compartments.totalRooms,
+                        washRooms: compartments.washRooms,
+                        parking: compartments.parking,
+                        roomNumber: compartments.roomNumber,
+                        security: compartments.security,
+                        garbageCollection: compartments.garbageCollection,
+                        wifi: compartments.wifi
+                    },
+                    createdAt: listings.createdAt,
+                    updatedAt: listings.updatedAt
+                })
+                .from(listings)
+                .leftJoin(rates, eq(listings.id, rates.listingId))
+                .leftJoin(
+                    compartments,
+                    eq(listings.id, compartments.listingId)
+                );
 
-        return updatedListing[0];
+            return updatedListing[0];
+        });
+
+        return result;
     }
     // Delete a listing by its ID
     async deleteListing(listing_id: string): Promise<Listing | null> {

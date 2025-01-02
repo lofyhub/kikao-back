@@ -71,3 +71,25 @@ export interface ListingWithRatesAndCompartments {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface UpdateListing {
+    name?: string;
+    location?: string;
+    county?: string;
+    status?: string;
+    yearBuilt?: string;
+    description?: string;
+    size?: string;
+    ratesId: string; // mandatory
+    price?: number;
+    duration?: string;
+    compartmentsId: string; // mandatory
+    bedrooms?: number;
+    totalRooms?: string;
+    washRooms?: number;
+    parking?: boolean;
+    roomNumber?: boolean;
+    security?: boolean;
+    garbageCollection?: boolean;
+    wifi?: boolean;
+}

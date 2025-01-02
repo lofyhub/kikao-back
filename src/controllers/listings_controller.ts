@@ -13,7 +13,8 @@ import { verifyJWTToken } from '../middlewares/verifyToken';
 import { checkImageUploadFileType } from '../utils/multer';
 import {
     NewCompartmentWithoutListingId,
-    NewRateWithoutListingId
+    NewRateWithoutListingId,
+    UpdateListing
 } from '../interfaces/listing';
 
 const router = Router();
@@ -66,32 +67,28 @@ async function createUserListing(
             );
     }
 
-    // if (!req.files || req.files.length === 0) {
-    //     // If no file was sent, return an error response
-    //     return res
-    //         .status(400)
-    //         .json(
-    //             createErrorResponse('Please upload some images with the data!')
-    //         );
-    // }
+    if (!req.files || req.files.length === 0) {
+        return res
+            .status(400)
+            .json(
+                createErrorResponse('Please upload some images with the data!')
+            );
+    }
 
     try {
-        // const files: File[] = Array.isArray(req.files)
-        //     ? req.files
-        //     : Object.values(req.files).flat();
+        const files: File[] = Array.isArray(req.files)
+            ? req.files
+            : Object.values(req.files).flat();
 
-        // const uploadUrls: string[] = [];
-        // for (let i = 0; i < files.length; ++i) {
-        //     const path: string = files[i].path;
-        //     const { imageURL } = await cloudinaryInstance.uploadImage(path);
-        //     if (imageURL) {
-        //         uploadUrls.push(imageURL);
-        //     }
-        // }
-        // const imageUrls = await uploadUrls;
-        const imageUrls = [
-            'https://images.pexels.com/photos/4832514/pexels-photo-4832514.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
-        ];
+        const uploadUrls: string[] = [];
+        for (let i = 0; i < files.length; ++i) {
+            const path: string = files[i].path;
+            const { imageURL } = await cloudinaryInstance.uploadImage(path);
+            if (imageURL) {
+                uploadUrls.push(imageURL);
+            }
+        }
+        const imageUrls = await uploadUrls;
 
         const listing: NewListing = {
             name: title,
@@ -143,8 +140,20 @@ async function deleteListing(
 ): Promise<any> {
     const { account_id, user_id } = req.body;
 
+    let userId: string = (req.user as JWTUserPayload).id;
+
+    if (userId !== user_id) {
+        return res
+            .status(401)
+            .json(
+                createErrorResponse(
+                    'Sorry, you are only able to delete your own listings!'
+                )
+            );
+    }
+
     try {
-        const listing_delete = await listingRepository.deleteListing(user_id);
+        const listing_delete = await listingRepository.findListingById(user_id);
 
         if (!listing_delete || listing_delete?.id !== account_id) {
             return res
@@ -195,25 +204,54 @@ async function updateListing(
         yearBuilt,
         description,
         size,
-        userId
+        userId,
+        ratesId,
+        price,
+        duration,
+        compartmentsId,
+        bedrooms,
+        totalRooms,
+        washRooms,
+        parking,
+        roomNumber,
+        security,
+        garbageCollection,
+        wifi
     } = req.body;
 
-    const updates: NewListing = {
+    let user_id: string = (req.user as JWTUserPayload).id;
+
+    if (userId !== user_id) {
+        return res
+            .status(401)
+            .json(
+                createErrorResponse(
+                    'Sorry, you are only able to update your own listings!'
+                )
+            );
+    }
+
+    const updates: UpdateListing = {
         name,
-        userId,
         location,
         status,
         county,
         yearBuilt,
         description,
-        size
+        size,
+        ratesId,
+        price,
+        duration,
+        compartmentsId,
+        bedrooms,
+        totalRooms,
+        washRooms,
+        parking,
+        roomNumber,
+        security,
+        garbageCollection,
+        wifi
     };
-
-    if (!listingId) {
-        return res
-            .status(400)
-            .json(createErrorResponse('listing ID is required!'));
-    }
 
     // Don't proceed if there are no updates to make
     if (Object.keys(updates).length === 0) {
@@ -223,7 +261,7 @@ async function updateListing(
     const user_listing = await listingRepository.findListingById(listingId);
 
     // TODO: A better way to verify the user updating the listing
-    if (!user_listing || user_listing?.id !== userId) {
+    if (!user_listing || user_listing?.id !== listingId) {
         return res
             .status(403)
             .json(
@@ -338,12 +376,10 @@ async function filterListings(
 
 // Routes
 router.get('/listings', getListings);
-router.post('/user/listings', multi_upload, verifyJWTToken, createUserListing);
-router.put('/user/listings', updateListing);
-router.delete('/user/listings', deleteListing);
-
 router.post('/user/listing', getListing);
-
 router.post('/sort/listings', filterListings);
+router.delete('/user/listings', deleteListing);
+router.put('/user/listings', verifyJWTToken, updateListing);
+router.post('/user/listings', multi_upload, verifyJWTToken, createUserListing);
 
 export default router;

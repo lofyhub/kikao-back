@@ -9,7 +9,7 @@ export async function verifyJWTToken(
     req: Request,
     res: Response,
     next: NextFunction
-): Promise<Response | void> {
+): Promise<any> {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {

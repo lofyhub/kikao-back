@@ -3,23 +3,29 @@ name: Node CI
 on: [push]
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        strategy:
-            matrix:
-                node-version: [14.x, 16.x, 17.x]
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 17.x]
 
-        steps:
-            - uses: actions/checkout@v1
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v1
-              with:
-                  node-version: ${{ matrix.node-version }}
-            - name: pnpm install, build, lint
-              run: |
-                  pnpm install
-                  pnpm run build
-                  pnpm run lint
-              env:
-                  CI: true
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Step to install pnpm
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # Step to install dependencies, build and lint
+      - name: pnpm install, build, lint
+        run: |
+          pnpm install
+          pnpm run build
+          pnpm run lint
+        env:
+          CI: true

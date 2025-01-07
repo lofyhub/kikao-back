@@ -53,7 +53,6 @@ export interface ListingWithRatesAndCompartments {
     size: string;
     images: string[];
     rates: {
-        id: string;
         price: number;
         duration: string;
     } | null;

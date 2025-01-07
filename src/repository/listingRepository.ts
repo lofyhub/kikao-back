@@ -2,7 +2,7 @@ import { db } from '../db';
 import { listings, Listing, NewListing, NewRate } from '../db/schema';
 import { compartments, NewCompartment } from '../db/schema';
 import { rates } from '../db/schema';
-import { eq, and, SQL, TableConfig } from 'drizzle-orm';
+import { eq, and, SQL } from 'drizzle-orm';
 import {
     NotFoundError,
     UpdateFailedError,
@@ -15,7 +15,6 @@ import {
     NewRateWithoutListingId,
     UpdateListing
 } from '../interfaces/listing';
-import { PgTable } from 'drizzle-orm/pg-core';
 
 export interface Filters {
     price?: number;
@@ -210,7 +209,6 @@ class ListingRepository {
                     size: listings.size,
                     images: listings.images,
                     rates: {
-                        id: rates.id,
                         price: rates.price,
                         duration: rates.duration
                     },
@@ -289,7 +287,6 @@ class ListingRepository {
                 size: listings.size,
                 images: listings.images,
                 rates: {
-                    id: rates.id,
                     price: rates.price,
                     duration: rates.duration
                 },

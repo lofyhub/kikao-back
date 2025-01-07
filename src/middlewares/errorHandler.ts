@@ -33,7 +33,7 @@ export function errorHandler(
             );
     } else if (err instanceof PostgresError) {
         const res_body = createErrorResponse(
-            'Errod occured on our End',
+            'Error occured on our End',
             undefined,
             'PGError'
         );

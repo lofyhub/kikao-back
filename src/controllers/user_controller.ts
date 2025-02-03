@@ -36,7 +36,7 @@ async function getListingAuthor(
         const res_body = createSuccessResponse('Successful', existingUser);
 
         return res.status(200).json(res_body);
-    } catch (error:unknown) {
+    } catch (error: unknown) {
         return next(error);
     }
 }

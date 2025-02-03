@@ -40,8 +40,8 @@ export class Cloudinary implements ICloudinary {
                 statusCode: 200,
                 imageURL: url
             };
-        } catch (error:any) {
-            console.log("Error uploading image to cloudinary: ", error);
+        } catch (error: any) {
+            console.log('Error uploading image to cloudinary: ', error);
             unlinkSync(imageToUpload);
             return {
                 isSuccess: false,

@@ -87,9 +87,38 @@ class ListingRepository {
 
     async findListingById(listing_id: string): Promise<Listing | null> {
         const result = await db
-            .select()
+            .select({
+                id: listings.id,
+                userId: listings.userId,
+                name: listings.name,
+                location: listings.location,
+                county: listings.county,
+                status: listings.status,
+                yearBuilt: listings.yearBuilt,
+                description: listings.description,
+                size: listings.size,
+                images: listings.images,
+                rates: {
+                    price: rates.price,
+                    duration: rates.duration
+                },
+                compartments: {
+                    bedrooms: compartments.bedrooms,
+                    totalRooms: compartments.totalRooms,
+                    washRooms: compartments.washRooms,
+                    parking: compartments.parking,
+                    roomNumber: compartments.roomNumber,
+                    security: compartments.security,
+                    garbageCollection: compartments.garbageCollection,
+                    wifi: compartments.wifi
+                },
+                createdAt: listings.createdAt,
+                updatedAt: listings.updatedAt
+            })
             .from(listings)
-            .where(eq(listings.id, listing_id));
+            .where(eq(listings.id, listing_id))
+            .innerJoin(rates, eq(rates.listingId, listings.id))
+            .innerJoin(compartments, eq(compartments.listingId, listings.id));
 
         if (result.length === 0) {
             return null;
@@ -244,7 +273,7 @@ class ListingRepository {
             .from(listings)
             .where(eq(listings.id, listing_id));
 
-        if (listing.length === 0 || !listing) {
+        if (!listing || listing.length === 0) {
             throw new NotFoundError(`Listing with ID ${listing_id} not found.`);
         }
 

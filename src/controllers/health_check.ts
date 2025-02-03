@@ -9,14 +9,15 @@ async function healthCheck(
     res: Response,
     next: NextFunction
 ): Promise<any> {
+
+    const message = 'All systems are go! 🚀';
+
     const data = {
-        mood: 'Feeling awesome! 😎',
         NODE_ENV: env.NODE_ENV,
-        API_VERSION: 'api/v1',
+        API_VERSION: '/api/v1/',
+        IP:req.ip,
         timestamp: new Date().toISOString()
     };
-    const message =
-        'All systems are go! 🚀';
 
     return res.status(200).json(createSuccessResponse(message, data));
 }

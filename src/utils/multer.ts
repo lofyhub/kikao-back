@@ -1,6 +1,9 @@
-import multer, { FileFilterCallback } from "multer";
+import multer, { FileFilterCallback } from 'multer';
 
-export function checkImageUploadFileType(file: Express.Multer.File, cb:FileFilterCallback) {
+export function checkImageUploadFileType(
+    file: Express.Multer.File,
+    cb: FileFilterCallback
+) {
     // Allowed ext
     const filetypes = /jpeg|jpg|png|gif/;
     // Check ext

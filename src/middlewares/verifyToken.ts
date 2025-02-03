@@ -22,7 +22,7 @@ export async function verifyJWTToken(
         const res = jwt.verify(token, env.JWT_SECRET) as JWTUserPayload;
         req.user = res;
         return next();
-    } catch (_error:unknown) {
+    } catch (error: unknown) {
         return res
             .status(400)
             .json(createErrorResponse('Invalid or expired token.'));

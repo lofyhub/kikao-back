@@ -1,5 +1,5 @@
 /** HERE YOU CAN ADD ALL YOUR ENVIRONMENT VARIABLES */
-const DEBUG = process.env.DEBUG || false;
+const DEBUG = process.env.DEBUG || true;
 if (DEBUG) {
     console.log('DEBUG ENABLED');
 }
@@ -29,18 +29,22 @@ const GOOGLE_CALLBACK_URL =
     'http://localhost:3000/oauth2/redirect/google';
 const DATABASE_URL = 'postgres://postgres:Monica@7029!@localhost:5432/kikao';
 const JWT_SECRET = process.env.JWT_SECRET || 'ChiziKarogwaTena';
-const NODE_ENV = (process.env.NODE_ENV as "development" | "production" | "test") || "development";
+const NODE_ENV =
+    (process.env.NODE_ENV as 'development' | 'production' | 'test') ||
+    'development';
 const FRONTEND_APP_LOGIN_REDIRECT =
     process.env.FRONTEND_APP_LOGIN_REDIRECT ||
     'http://localhost:9001/login/success';
-const GOOGLE_APP_OAUTH_REDIRECT = process.env.GOOGLE_APP_OAUTH_REDIRECT || 'http://localhost:9000/api/v1/oauth/google/callback';
+const GOOGLE_APP_OAUTH_REDIRECT =
+    process.env.GOOGLE_APP_OAUTH_REDIRECT ||
+    'http://localhost:9000/api/v1/oauth/google/callback';
 
 interface EnvVariables {
     PORT: number;
     debug: boolean;
     IMAGE_UPLOAD_SIZE_LIMIT: number;
     FRONTEND_APP_LOGIN_REDIRECT: string;
-    GOOGLE_APP_OAUTH_REDIRECT: string,
+    GOOGLE_APP_OAUTH_REDIRECT: string;
     TEST_MODE: boolean;
     PUBLIC_KEY: string;
     PRIVATE_KEY: string;
@@ -59,12 +63,12 @@ interface EnvVariables {
 }
 
 // Make sure to add your env variables to this object so that they are exported to the rest of the application
-const env:EnvVariables = {
+const env: EnvVariables = {
     PORT: Number(PORT),
     debug: Boolean(DEBUG),
     IMAGE_UPLOAD_SIZE_LIMIT: Number(IMAGE_UPLOAD_SIZE_LIMIT!),
     FRONTEND_APP_LOGIN_REDIRECT: FRONTEND_APP_LOGIN_REDIRECT,
-    GOOGLE_APP_OAUTH_REDIRECT:GOOGLE_APP_OAUTH_REDIRECT,
+    GOOGLE_APP_OAUTH_REDIRECT: GOOGLE_APP_OAUTH_REDIRECT,
     TEST_MODE: Boolean(TEST_MODE),
     PUBLIC_KEY: PUBLIC_KEY,
     PRIVATE_KEY: PRIVATE_KEY,

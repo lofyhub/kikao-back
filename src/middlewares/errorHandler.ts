@@ -9,11 +9,7 @@ import { createErrorResponse } from '../utils/responseUtils';
 import multer from 'multer';
 import { PostgresError } from 'postgres';
 
-export function errorHandler(
-    err: Error,
-    req: Request,
-    res: Response,
-): any {
+export function errorHandler(err: Error, req: Request, res: Response): any {
     console.error(err); // Log the error for internal debugging
 
     if (err instanceof NotFoundError) {
@@ -33,7 +29,7 @@ export function errorHandler(
             );
     } else if (err instanceof PostgresError) {
         const res_body = createErrorResponse(
-            'Error occured on our End',
+            err.message,
             undefined,
             'PGError'
         );
@@ -44,7 +40,7 @@ export function errorHandler(
             .status(500)
             .json(
                 createErrorResponse(
-                    'An unexpected error occurred',
+                    'An unexpected error occurred on our end!',
                     err as unknown as string
                 )
             );

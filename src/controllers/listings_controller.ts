@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import multer from 'multer';
-import {File, JWTUserPayload } from '../interfaces';
+import { File, JWTUserPayload } from '../interfaces';
 import { cloudinaryInstance } from '../utils/cloudinary';
 import listingRepository, { Filters } from '../repository/listingRepository';
-import { NewListing} from '../db/schema';
+import { NewListing } from '../db/schema';
 import {
     createErrorResponse,
     createSuccessResponse
@@ -23,7 +23,11 @@ const multerStorage = multer.memoryStorage();
 
 const multi_upload = multer({
     limits: { fileSize: env.IMAGE_UPLOAD_SIZE_LIMIT }, // fileSize (in bytes)
-    fileFilter: (req: Request, file: Express.Multer.File, callback: multer.FileFilterCallback) => {
+    fileFilter: (
+        req: Request,
+        file: Express.Multer.File,
+        callback: multer.FileFilterCallback
+    ) => {
         checkImageUploadFileType(file, callback);
     },
     storage: multerStorage
@@ -140,7 +144,7 @@ async function deleteListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { account_id, user_id } = req.body;
+    const { listing_id, user_id } = req.body;
 
     const userId: string = (req.user as JWTUserPayload).id;
 
@@ -155,9 +159,9 @@ async function deleteListing(
     }
 
     try {
-        const listing_delete = await listingRepository.findListingById(user_id);
+        const listing_delete = await listingRepository.findListingById(listing_id);
 
-        if (!listing_delete || listing_delete?.id !== account_id) {
+        if (!listing_delete || listing_delete?.id !== listing_id) {
             return res
                 .status(401)
                 .json(
@@ -168,7 +172,7 @@ async function deleteListing(
         }
 
         const listing_to_delete = await listingRepository.deleteListing(
-            user_id
+            listing_id
         );
 
         if (!listing_to_delete) {
@@ -325,6 +329,14 @@ async function getListing(
     next: NextFunction
 ): Promise<any> {
     const { id } = req.body;
+
+    // TODO:CHECK if the UUID passed is a real uuuid or just some random num
+    // https://stackoverflow.com/questions/7905929/how-to-test-valid-uuid-guid
+    if (!id) {
+        return res
+            .status(400)
+            .json(createErrorResponse('ID required in the body'));
+    }
     try {
         const listing = await listingRepository.findListingById(id);
 
@@ -380,8 +392,8 @@ async function filterListings(
 router.get('/listings', getListings);
 router.post('/user/listing', getListing);
 router.post('/sort/listings', filterListings);
-router.delete('/user/listings', deleteListing);
 router.put('/user/listings', verifyJWTToken, updateListing);
+router.delete('/user/listings',verifyJWTToken, deleteListing);
 router.post('/user/listings', multi_upload, verifyJWTToken, createUserListing);
 
 export default router;

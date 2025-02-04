@@ -1,8 +1,7 @@
 import { db } from '../db';
 import { bookmarks, NewBookmark, Bookmark } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { NotFoundError } from '../utils/errors';
-import { DeleteFailedError } from '../errors';
+import { DeleteFailedError, NotFoundError} from '../errors';
 
 class BookmarkRepository {
     async saveBookmark(review: NewBookmark): Promise<Bookmark> {

@@ -3,7 +3,6 @@ import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { json as bodyParser } from 'body-parser';
 import compression from 'compression'; // compresses requests
-
 import env from './env';
 import listingsController from './controllers/listings_controller';
 import healthController from './controllers/health_check';

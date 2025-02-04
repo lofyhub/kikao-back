@@ -23,7 +23,6 @@ export class DeleteFailedError extends Error {
         Error.captureStackTrace(this, UpdateFailedError);
     }
 }
-
 export class UnauthorizedError extends Error {
     constructor(message: string) {
         super(message);
@@ -39,3 +38,5 @@ export class GenericError extends Error {
         Error.captureStackTrace(this, GenericError);
     }
 }
+
+export const validationMessage = "Validation error occured!";

@@ -10,7 +10,7 @@ import {
     GenericError
 } from '../errors';
 import {
-    ListingWithRatesAndCompartments,
+    ListingRatesCompartments,
     NewCompartmentWithoutListingId,
     NewRateWithoutListingId,
     UpdateListing
@@ -85,7 +85,7 @@ class ListingRepository {
         return result;
     }
 
-    async findListingById(listing_id: string): Promise<Listing | null> {
+    async findListingById(listing_id: string): Promise<ListingRatesCompartments | null> {
         const result = await db
             .select({
                 id: listings.id,
@@ -129,9 +129,10 @@ class ListingRepository {
 
     // Update a listing by its ID
     async updateListing(
+        user_id:string,
         listing_id: string,
         data: UpdateListing
-    ): Promise<Listing | null> {
+    ): Promise<ListingRatesCompartments | null> {
         const {
             ratesId,
             price,
@@ -175,10 +176,17 @@ class ListingRepository {
         const res = await db
             .select()
             .from(listings)
-            .where(eq(listings.id, listing_id));
+            .where(eq(listings.id, listing_id))
+            .innerJoin(rates, eq(rates.listingId, listings.id))
+            .innerJoin(compartments, eq(compartments.listingId, listings.id));
 
         if (res.length === 0) {
             throw new NotFoundError(`Listing with ID ${listing_id} not found.`);
+        }
+
+        // Prevent updation of someone elses listing
+        if(res[0].listings.userId !== user_id){
+            throw new UpdateFailedError("You can only update your listing!");
         }
 
         const filteredListingData = {
@@ -289,7 +297,7 @@ class ListingRepository {
     }
 
     // Get all listings for a user based on their ID
-    async getUserListings(user_id: string): Promise<Listing[]> {
+    async getUserListings(user_id: string): Promise<ListingRatesCompartments[]> {
         const result = await db.query.listings.findMany({
             where: eq(listings.id, user_id),
             with: {
@@ -302,7 +310,7 @@ class ListingRepository {
     }
 
     // Fetch all listings
-    async getAllListings(): Promise<ListingWithRatesAndCompartments[]> {
+    async getAllListings(): Promise<ListingRatesCompartments[]> {
         const result = await db
             .select({
                 id: listings.id,

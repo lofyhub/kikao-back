@@ -5,25 +5,32 @@ import {
     createErrorResponse,
     createSuccessResponse
 } from '../utils/responseUtils';
+import { z } from "zod";
 
 const router = Router();
 
+const idSchema = z.string();
 async function getListingAuthor(
     req: Request,
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { id } = req.body;
-    if (!id) {
+    const { Id } = req.body;
+    if (!Id) {
         const message = 'Id is required';
         return res.status(403).json(createErrorResponse(message));
     }
 
-    if (typeof id !== 'string') {
-        throw new Error('Id should be a string!');
+    const idValid = idSchema.safeParse(Id);
+
+    if (!idValid.success) {
+        const error_formatted = idValid.error.format();
+        const message = "Validation error occured!";
+
+        return res.status(403).json(createErrorResponse(message,"APIError",error_formatted))
     }
     try {
-        const existingUser = await User.getUserById(id);
+        const existingUser = await User.getUserById(Id);
 
         if (!existingUser) {
             const res_body = createErrorResponse(
@@ -48,8 +55,16 @@ async function getUserListings(
 ): Promise<any> {
     const { Id } = req.body;
     if (!Id) {
-        res.status(400).json({ message: 'Id is required!' });
-        return;
+        return res.status(400).json({ message: 'Id is required!' });
+    }
+
+    const idValid = idSchema.safeParse(Id);
+
+    if (!idValid.success) {
+        const error_formatted = idValid.error.format();
+        const message = "Validation error occured!";
+
+        return res.status(403).json(createErrorResponse(message,"APIError",error_formatted))
     }
 
     try {

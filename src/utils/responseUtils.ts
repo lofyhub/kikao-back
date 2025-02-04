@@ -9,7 +9,7 @@ interface ErrorResponse {
     message: string;
     error: {
         type: string;
-        details?: string;
+        details?: string | ZodError;
     };
 }
 
@@ -24,10 +24,14 @@ export const createSuccessResponse = <T = null>(
     data
 });
 
+export interface ZodError {
+    _errors: string[];
+}
+
 export const createErrorResponse = (
     message: string,
     type = 'APIError',
-    details?: string
+    details?: string | ZodError
 ): ApiResponse => ({
     status: 'error',
     message,

@@ -12,10 +12,18 @@ import env from '../env';
 import { verifyJWTToken } from '../middlewares/verifyToken';
 import { checkImageUploadFileType } from '../utils/multer';
 import {
+    NewCompartmentSchema,
     NewCompartmentWithoutListingId,
+    NewListingSchema,
+    NewRateSchema,
     NewRateWithoutListingId,
-    UpdateListing
+    UpdateListing,
+    listingIdSchema,
+    updateListingSchema,
+    userIdSchema,
+    ratesIdSchema 
 } from '../interfaces/listing';
+import { validationMessage } from '../errors';
 
 const router = Router();
 
@@ -32,6 +40,7 @@ const multi_upload = multer({
     },
     storage: multerStorage
 }).array('listing_images', 8);
+
 
 async function createUserListing(
     req: Request,
@@ -125,6 +134,21 @@ async function createUserListing(
             garbageCollection: garbagecollection
         };
 
+        const listingValidation = NewListingSchema.safeParse(listing);
+        const ratesValidation = NewRateSchema.safeParse(rates);
+        const compartmentsValidation = NewCompartmentSchema.safeParse(compartments);
+
+        if(!listingValidation.success){
+            const error_formatted = listingValidation.error.format();
+            return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+        }else if(!ratesValidation.success){
+            const error_formatted = ratesValidation.error.format();
+            return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
+        }else if(!compartmentsValidation.success){
+            const error_formatted = compartmentsValidation.error.format();
+            return res.status(403).json(createErrorResponse(validationMessage,'APIError',error_formatted))
+        }
+
         const result = await listingRepository.createListing(
             listing,
             rates,
@@ -147,6 +171,17 @@ async function deleteListing(
     const { listing_id, user_id } = req.body;
 
     const userId: string = (req.user as JWTUserPayload).id;
+
+    const listingValidation = listingIdSchema.safeParse(listing_id);
+    const userValidation = userIdSchema.safeParse(user_id);
+
+    if(!listingValidation.success){
+        const error_formatted = listingValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
+    }else if(!userValidation.success){
+        const error_formatted = userValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
+    }
 
     if (userId !== user_id) {
         return res
@@ -227,6 +262,21 @@ async function updateListing(
 
     const user_id: string = (req.user as JWTUserPayload).id;
 
+    const userIdValidation = userIdSchema.safeParse(userId);
+    const listingIdValidation = listingIdSchema.safeParse(listingId);
+    const ratesIdValidation = ratesIdSchema.safeParse(ratesId);
+
+    if(!userIdValidation.success){
+        const error_formatted = userIdValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+    }else if(!listingIdValidation.success){
+        const error_formatted = listingIdValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+    }else if(!ratesIdValidation.success){
+        const error_formatted = ratesIdValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+    }
+
     if (userId !== user_id) {
         return res
             .status(401)
@@ -261,24 +311,31 @@ async function updateListing(
 
     // Don't proceed if there are no updates to make
     if (Object.keys(updates).length === 0) {
-        return res.status(400).json(createErrorResponse('No updates to make'));
+        return res.status(400).json(createErrorResponse('No updates to make!'));
+    }
+
+    const updateValidation = updateListingSchema.safeParse(updates);
+
+    if(!updateValidation.success){
+        const error_formatted = updateValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
     }
 
     const user_listing = await listingRepository.findListingById(listingId);
 
     // TODO: A better way to verify the user updating the listing
-    if (!user_listing || user_listing?.id !== listingId) {
+    if (!user_listing || user_listing?.userId !== user_id) {
         return res
             .status(403)
             .json(
                 createErrorResponse(
-                    'Sorry, you are only able to edit listings that you have created'
+                    'You can only update listing that you have created!'
                 )
             );
     }
 
     try {
-        const result = await listingRepository.updateListing(
+        const result = await listingRepository.updateListing(user_id,
             listingId,
             updates
         );
@@ -328,22 +385,28 @@ async function getListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { id } = req.body;
+    const { Id } = req.body;
 
-    // TODO:CHECK if the UUID passed is a real uuuid or just some random num
-    // https://stackoverflow.com/questions/7905929/how-to-test-valid-uuid-guid
-    if (!id) {
+    if (!Id) {
         return res
             .status(400)
             .json(createErrorResponse('ID required in the body'));
     }
+
+    const idValidation = userIdSchema.safeParse(Id);
+
+    if(!idValidation.success){
+        const error_formatted = idValidation.error.format();
+        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+    }
+
     try {
-        const listing = await listingRepository.findListingById(id);
+        const listing = await listingRepository.findListingById(Id);
 
         if (!listing) {
             return res
                 .status(404)
-                .json(createErrorResponse(`Listing with id ${id} not found.`));
+                .json(createErrorResponse(`Listing with id ${Id} not found.`));
         }
 
         return res

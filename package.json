@@ -58,7 +58,6 @@
         "passport-google-oauth20": "^2.0.0",
         "pg": "^8.13.1",
         "postgres": "^3.4.5",
-        "superstruct": "^1.0.3",
         "zod": "^3.21.4"
     },
     "engines": {

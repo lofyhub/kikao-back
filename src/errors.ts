@@ -39,4 +39,4 @@ export class GenericError extends Error {
     }
 }
 
-export const validationMessage = "Validation error occured!";
+export const validationMessage = 'Validation error occured!';

@@ -1,21 +1,18 @@
 export interface IUser {
     id: string;
-    last_login?: string | null;
-    is_linked: boolean;
     username: string;
-    email: string;
-    kikao_type: string;
-    gender: Gender;
-    profile_image?: string | null;
-    phone_number?: string | null;
-    provider: string;
-    provider_user_id: string;
-    provider_picture_url?: string | null;
-    business_name?: string | null;
-    business_location?: string | null;
-    business_type?: string | null;
-    business_city?: string | null;
-    business_logo?: string | null;
+    kikaoType: string;
+    // TODO: make use of enums!
+    gender: string;
+    profileImage?: string | null;
+    providerPictureUrl?: string | null;
+    businessName?: string | null;
+    businessLocation?: string | null;
+    businessType?: string | null;
+    businessCity?: string | null;
+    businessLogo?: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface UserAttributes {

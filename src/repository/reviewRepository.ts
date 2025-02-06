@@ -1,5 +1,5 @@
 import { reviews, NewReview, Review } from '../db/schema';
-import { DeleteFailedError, NotFoundError} from '../errors';
+import { DeleteFailedError, NotFoundError } from '../errors';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 

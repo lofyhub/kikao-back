@@ -1,4 +1,4 @@
-import { EnvVariables } from "./interfaces/env";
+import { EnvVariables } from './interfaces/env';
 
 /** HERE YOU CAN ADD ALL YOUR ENVIRONMENT VARIABLES */
 const DEBUG = process.env.DEBUG || true;

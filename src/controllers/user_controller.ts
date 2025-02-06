@@ -5,7 +5,8 @@ import {
     createErrorResponse,
     createSuccessResponse
 } from '../utils/responseUtils';
-import { z } from "zod";
+import { z } from 'zod';
+import { validationMessage } from '../errors';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ async function getListingAuthor(
     next: NextFunction
 ): Promise<any> {
     const { Id } = req.body;
+
     if (!Id) {
         const message = 'Id is required';
         return res.status(403).json(createErrorResponse(message));
@@ -25,19 +27,26 @@ async function getListingAuthor(
 
     if (!idValid.success) {
         const error_formatted = idValid.error.format();
-        const message = "Validation error occured!";
 
-        return res.status(403).json(createErrorResponse(message,"APIError",error_formatted))
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
     try {
         const existingUser = await User.getUserById(Id);
 
         if (!existingUser) {
             const res_body = createErrorResponse(
-                'Listing author with the given ID was not found'
+                `Listing author with ID ${Id} was not found!`
             );
 
-            return res.status(300).json(res_body);
+            return res.status(404).json(res_body);
         }
 
         const res_body = createSuccessResponse('Successful', existingUser);
@@ -54,17 +63,25 @@ async function getUserListings(
     next: NextFunction
 ): Promise<any> {
     const { Id } = req.body;
+
     if (!Id) {
-        return res.status(400).json({ message: 'Id is required!' });
+        return res.status(403).json(createErrorResponse('Id is required!'));
     }
 
     const idValid = idSchema.safeParse(Id);
 
     if (!idValid.success) {
         const error_formatted = idValid.error.format();
-        const message = "Validation error occured!";
 
-        return res.status(403).json(createErrorResponse(message,"APIError",error_formatted))
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     try {
@@ -75,9 +92,8 @@ async function getUserListings(
             count: userListings.length
         });
         return res.status(200).json(res_body);
-    } catch (error) {
-        next(error);
-        return;
+    } catch (error: unknown) {
+        return next(error);
     }
 }
 

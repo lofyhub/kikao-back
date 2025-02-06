@@ -5,6 +5,10 @@ import {
     createSuccessResponse
 } from '../utils/responseUtils';
 import { NewBookmark } from '../db/schema';
+import { verifyJWTToken } from '../middlewares/verifyToken';
+import { JWTUserPayload } from '../interfaces';
+import { listingIdSchema, userIdSchema } from '../interfaces/listing';
+import { validationMessage } from '../errors';
 
 const router = Router();
 
@@ -13,18 +17,45 @@ async function addBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { user_id, listing_id } = req.body;
+    const { userId, listingId } = req.body;
 
-    if (!user_id || !listing_id) {
+    if (!userId || !listingId) {
         return res
             .status(309)
-            .json(createErrorResponse('user_id and listing_id are required!'));
+            .json(createErrorResponse('userId and listingId are required!'));
+    }
+
+    const userIdValidation = userIdSchema.safeParse(userId);
+    const listingIdValidation = listingIdSchema.safeParse(listingId);
+
+    if (!userIdValidation.success) {
+        const error_formatted = userIdValidation.error.format();
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
+    } else if (!listingIdValidation.success) {
+        const error_formatted = listingIdValidation.error.format();
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     try {
         const data: NewBookmark = {
-            userId: user_id,
-            listingId: listing_id
+            userId: userId,
+            listingId: listingId
         };
         const result = bookmarkRepository.saveBookmark(data);
 
@@ -41,34 +72,40 @@ async function fetchUserBookmarks(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { user_id } = req.body;
-    if (!user_id) {
+    const { userId } = req.body;
+
+    if (!userId) {
         return res.status(309).json(createErrorResponse('userId is required!'));
     }
+    const userIdValidation = userIdSchema.safeParse(userId);
 
-    if (typeof user_id !== 'string') {
-        throw new Error('Userid should be a string');
+    if (!userIdValidation.success) {
+        const error_formatted = userIdValidation.error.format();
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
+
     try {
-        const bookmarks = await bookmarkRepository.findUserBookmarkById(
-            user_id
-        );
+        const bookmarks = await bookmarkRepository.findUserBookmarkById(userId);
 
         if (!bookmarks || bookmarks.length === 0) {
             return res
                 .status(404)
-                .json(
-                    createErrorResponse(
-                        'No bookmarks found for the given listing ID.'
-                    )
-                );
+                .json(createErrorResponse('No bookmarks found for this user.'));
         }
 
         return res
             .status(200)
             .json(
                 createSuccessResponse(
-                    'Bookmarks fetched successfully',
+                    'User bookmarks fetched successfully!',
                     bookmarks
                 )
             );
@@ -82,19 +119,31 @@ async function fetchListingBookmarks(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listing_id } = req.body;
-    if (!listing_id) {
+    const { listingId } = req.body;
+    if (!listingId) {
         return res
             .status(309)
-            .json(createErrorResponse('ListingId is required!'));
+            .json(createErrorResponse('listingId is required!'));
     }
 
-    if (typeof listing_id !== 'string') {
-        throw new Error('ListingIDd should be a string');
+    const listingIdValidation = listingIdSchema.safeParse(listingId);
+
+    if (!listingIdValidation.success) {
+        const error_formatted = listingIdValidation.error.format();
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
+
     try {
         const bookmarks = await bookmarkRepository.findUserBookmarkById(
-            listing_id
+            listingId
         );
 
         if (!bookmarks || bookmarks.length === 0) {
@@ -125,17 +174,29 @@ async function deleteBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { user_id, bookmark_id } = req.body;
+    const { userId, bookmarkId } = req.body;
 
-    if (!user_id || !bookmark_id) {
+    if (!userId || !bookmarkId) {
         return res
             .status(400)
             .json(createErrorResponse('UserId and BookmarkId are required'));
     }
 
+    const user_id: string = (req.user as JWTUserPayload).id;
+
+    if (userId !== user_id) {
+        return res
+            .status(401)
+            .json(
+                createErrorResponse(
+                    'Sorry, you are only able to delete your own Bookmark!'
+                )
+            );
+    }
+
     try {
         const deleted_bookmark = await bookmarkRepository.deleteBookmark(
-            bookmark_id
+            bookmarkId
         );
 
         return res
@@ -153,9 +214,9 @@ async function deleteBookmark(
 }
 
 // Routes
-router.post('/bookmarks', addBookmark);
+router.post('/bookmarks', verifyJWTToken, addBookmark);
 router.post('/user/bookmarks', fetchUserBookmarks);
 router.post('/listing/bookmarks', fetchListingBookmarks);
-router.delete('/delete/bookmarks', deleteBookmark);
+router.delete('/delete/bookmarks', verifyJWTToken, deleteBookmark);
 
 export default router;

@@ -5,6 +5,7 @@ import {
 } from '../utils/responseUtils';
 import env from '../env';
 import OpenAI from 'openai';
+import { verifyJWTToken } from '../middlewares/verifyToken';
 
 const router = Router();
 
@@ -32,20 +33,20 @@ async function generateDescription(
                 );
                 return res.status(200).json(res_body);
             })
-            .catch((err: any) => {
+            .catch((err: unknown) => {
                 const res_body = createErrorResponse(
                     'Failed to generate description',
                     err as string
                 );
                 return res.status(400).json(res_body);
             });
-    } catch (error: any) {
+    } catch (error: unknown) {
         return next(error);
     }
 }
 
 // Routes
 
-router.post('/description', generateDescription);
+router.post('/description', verifyJWTToken, generateDescription);
 
 export default router;

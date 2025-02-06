@@ -1,23 +1,23 @@
 import { eq, and } from 'drizzle-orm';
-import { AuthStrategy } from '../interfaces/user';
+import { AuthStrategy, IUser } from '../interfaces/user';
 import { db } from '../db';
 import { users, User, NewUser } from '../db/schema';
 import { BusinessInfo } from '../controllers/auth_controller';
 import { sendEmail } from '../config/mailer';
-import {
-    NotFoundError,
-    UpdateFailedError,
-    GenericError
-} from '../errors';
+import { NotFoundError, UpdateFailedError, GenericError } from '../errors';
+import { filterUserData } from '../utils/helpers';
 
 class UserRepository {
-    async createUser(new_user: NewUser): Promise<User> {
+    async createUser(new_user: NewUser): Promise<IUser> {
         try {
             const user_data = await db.transaction(async (tx) => {
-                const new_data = await tx.insert(users).values(new_user).returning();
+                const new_data = await tx
+                    .insert(users)
+                    .values(new_user)
+                    .returning();
                 return new_data;
-              });
-            
+            });
+
             if (!user_data || user_data.length === 0) {
                 throw new GenericError('Error saving user!');
             }
@@ -28,16 +28,16 @@ class UserRepository {
                 console.error('Error sending email for user:', user_name, err);
             });
 
-            return user_data[0];
-        } catch (error:unknown) {
+            return filterUserData(user_data[0]);
+        } catch (error: unknown) {
             throw new GenericError('Error saving user!');
         }
     }
-    async getUserById(id: string): Promise<User | null> {
+    async getUserById(id: string): Promise<IUser | null> {
         const result = await db.select().from(users).where(eq(users.id, id));
-        return result.length === 0 ? null : result[0];
+        return result.length === 0 ? null : filterUserData(result[0]);
     }
-    async updateUser(user_id: string, user_data: BusinessInfo): Promise<User> {
+    async updateUser(user_id: string, user_data: BusinessInfo): Promise<IUser> {
         try {
             const updated_user = await db
                 .update(users)
@@ -49,15 +49,17 @@ class UserRepository {
                 throw new NotFoundError(`User with ID ${user_id} not found!`);
             }
 
-            return updated_user[0];
+            return filterUserData(updated_user[0]);
         } catch (error: unknown) {
-            throw new UpdateFailedError(`Error updating user with ID ${user_id}`);
+            throw new UpdateFailedError(
+                `Error updating user with ID ${user_id}`
+            );
         }
     }
     async getUserByStrategyAndAccountId(
         strategy: AuthStrategy,
         account_id: string
-    ): Promise<User | null> {
+    ): Promise<IUser | null> {
         try {
             const result = await db
                 .select()
@@ -68,9 +70,13 @@ class UserRepository {
                         eq(users.providerUserId, account_id)
                     )
                 );
-            return result.length === 0 ? null : result[0];
+
+            return result.length === 0 ? null : filterUserData(result[0]);
         } catch (error: unknown) {
-            console.error('Error getting user by strategy and account id', error);
+            console.error(
+                'Error getting user by strategy and account id',
+                error
+            );
             return null;
         }
     }

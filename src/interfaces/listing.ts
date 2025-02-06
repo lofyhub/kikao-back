@@ -5,7 +5,7 @@ import { z } from 'zod';
 export interface ListingAttributes {
     name: string;
     location: string;
-    county: string; 
+    county: string;
     status: string;
     year_built: string;
     description: string;
@@ -67,7 +67,7 @@ export interface ListingRatesCompartments {
         security: boolean;
         garbageCollection: boolean;
         wifi: boolean;
-    }|null;
+    } | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -95,22 +95,22 @@ export interface UpdateListing {
 }
 
 export const NewListingSchema = z.object({
-        name: z.string(),
-        location: z.string(),
-        county: z.string(),
-        status: z.string(),
-        yearBuilt: z.string(),
-        description: z.string(),
-        size: z.string(),
-        userId: z.string(),
-        images: z.string().array()
-})
+    name: z.string(),
+    location: z.string(),
+    county: z.string(),
+    status: z.string(),
+    yearBuilt: z.string(),
+    description: z.string(),
+    size: z.string(),
+    userId: z.string(),
+    images: z.string().array()
+});
 
 export const NewRateSchema = z.object({
     price: z.number(),
     duration: z.string(),
-    countryCode: z.string(),
-})
+    countryCode: z.string()
+});
 
 export const NewCompartmentSchema = z.object({
     bedrooms: z.number(),
@@ -120,8 +120,8 @@ export const NewCompartmentSchema = z.object({
     roomNumber: z.boolean(),
     security: z.boolean(),
     garbageCollection: z.boolean(),
-    wifi: z.boolean(),
-})
+    wifi: z.boolean()
+});
 
 export const updateListingSchema = z.object({
     name: z.string().optional(),
@@ -143,7 +143,7 @@ export const updateListingSchema = z.object({
     security: z.boolean().optional(),
     garbageCollection: z.boolean().optional(),
     wifi: z.boolean().optional()
-})
+});
 
 export const listingIdSchema = z.string().uuid();
 export const userIdSchema = z.string().uuid();

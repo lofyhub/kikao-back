@@ -21,7 +21,7 @@ import {
     listingIdSchema,
     updateListingSchema,
     userIdSchema,
-    ratesIdSchema 
+    ratesIdSchema
 } from '../interfaces/listing';
 import { validationMessage } from '../errors';
 
@@ -40,7 +40,6 @@ const multi_upload = multer({
     },
     storage: multerStorage
 }).array('listing_images', 8);
-
 
 async function createUserListing(
     req: Request,
@@ -136,17 +135,42 @@ async function createUserListing(
 
         const listingValidation = NewListingSchema.safeParse(listing);
         const ratesValidation = NewRateSchema.safeParse(rates);
-        const compartmentsValidation = NewCompartmentSchema.safeParse(compartments);
+        const compartmentsValidation =
+            NewCompartmentSchema.safeParse(compartments);
 
-        if(!listingValidation.success){
+        if (!listingValidation.success) {
             const error_formatted = listingValidation.error.format();
-            return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
-        }else if(!ratesValidation.success){
+            return res
+                .status(403)
+                .json(
+                    createErrorResponse(
+                        validationMessage,
+                        'APIError',
+                        error_formatted
+                    )
+                );
+        } else if (!ratesValidation.success) {
             const error_formatted = ratesValidation.error.format();
-            return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
-        }else if(!compartmentsValidation.success){
+            return res
+                .status(403)
+                .json(
+                    createErrorResponse(
+                        validationMessage,
+                        'APIError',
+                        error_formatted
+                    )
+                );
+        } else if (!compartmentsValidation.success) {
             const error_formatted = compartmentsValidation.error.format();
-            return res.status(403).json(createErrorResponse(validationMessage,'APIError',error_formatted))
+            return res
+                .status(403)
+                .json(
+                    createErrorResponse(
+                        validationMessage,
+                        'APIError',
+                        error_formatted
+                    )
+                );
         }
 
         const result = await listingRepository.createListing(
@@ -175,12 +199,28 @@ async function deleteListing(
     const listingValidation = listingIdSchema.safeParse(listing_id);
     const userValidation = userIdSchema.safeParse(user_id);
 
-    if(!listingValidation.success){
+    if (!listingValidation.success) {
         const error_formatted = listingValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
-    }else if(!userValidation.success){
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
+    } else if (!userValidation.success) {
         const error_formatted = userValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted))
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     if (userId !== user_id) {
@@ -194,7 +234,9 @@ async function deleteListing(
     }
 
     try {
-        const listing_delete = await listingRepository.findListingById(listing_id);
+        const listing_delete = await listingRepository.findListingById(
+            listing_id
+        );
 
         if (!listing_delete || listing_delete?.id !== listing_id) {
             return res
@@ -266,15 +308,39 @@ async function updateListing(
     const listingIdValidation = listingIdSchema.safeParse(listingId);
     const ratesIdValidation = ratesIdSchema.safeParse(ratesId);
 
-    if(!userIdValidation.success){
+    if (!userIdValidation.success) {
         const error_formatted = userIdValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
-    }else if(!listingIdValidation.success){
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
+    } else if (!listingIdValidation.success) {
         const error_formatted = listingIdValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
-    }else if(!ratesIdValidation.success){
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
+    } else if (!ratesIdValidation.success) {
         const error_formatted = ratesIdValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     if (userId !== user_id) {
@@ -316,9 +382,17 @@ async function updateListing(
 
     const updateValidation = updateListingSchema.safeParse(updates);
 
-    if(!updateValidation.success){
+    if (!updateValidation.success) {
         const error_formatted = updateValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     const user_listing = await listingRepository.findListingById(listingId);
@@ -335,7 +409,7 @@ async function updateListing(
     }
 
     try {
-        const result = await listingRepository.updateListing(user_id,
+        const result = await listingRepository.updateListing(
             listingId,
             updates
         );
@@ -395,9 +469,17 @@ async function getListing(
 
     const idValidation = userIdSchema.safeParse(Id);
 
-    if(!idValidation.success){
+    if (!idValidation.success) {
         const error_formatted = idValidation.error.format();
-        return res.status(403).json(createErrorResponse(validationMessage,"APIError",error_formatted));
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
     }
 
     try {
@@ -456,7 +538,7 @@ router.get('/listings', getListings);
 router.post('/user/listing', getListing);
 router.post('/sort/listings', filterListings);
 router.put('/user/listings', verifyJWTToken, updateListing);
-router.delete('/user/listings',verifyJWTToken, deleteListing);
+router.delete('/user/listings', verifyJWTToken, deleteListing);
 router.post('/user/listings', multi_upload, verifyJWTToken, createUserListing);
 
 export default router;

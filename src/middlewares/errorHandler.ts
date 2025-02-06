@@ -28,10 +28,7 @@ export function errorHandler(err: Error, req: Request, res: Response): any {
                 createErrorResponse('Multer error', err as unknown as string)
             );
     } else if (err instanceof PostgresError) {
-        const res_body = createErrorResponse(
-            err.message,
-            'PGError'
-        );
+        const res_body = createErrorResponse(err.message, 'PGError');
         return res.status(400).json(res_body);
     } else {
         // Handle unexpected errors

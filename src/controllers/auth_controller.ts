@@ -2,7 +2,6 @@ import { NextFunction, Request, Response, Router } from 'express';
 import multer from 'multer';
 import { generateJWTToken } from '../utils/helpers';
 import { cloudinaryInstance } from '../utils/cloudinary';
-import { validateFormFields } from '../utils/zod';
 import userRepository from '../repository/userRepository';
 import passport from '../config/passport';
 import {
@@ -12,6 +11,9 @@ import {
 import { verifyJWTToken } from '../middlewares/verifyToken';
 import { User } from '../db/schema';
 import env from '../env';
+import { JWTUserPayload } from '../interfaces';
+import { registerBusinessSchema, BusinessInfo } from '../interfaces/auth';
+import { validationMessage } from '../errors';
 
 const router = Router();
 
@@ -21,15 +23,6 @@ const upload = multer({
     limits: { fileSize: env.IMAGE_UPLOAD_SIZE_LIMIT },
     storage: multerStorage
 }).single('business_logo');
-
-export type BusinessInfo = {
-    phoneNumber: string;
-    businessName: string;
-    businessLocation: string;
-    businessType: string;
-    businessCity: string;
-    businessLogo: string;
-};
 
 async function registerBusiness(
     req: Request,
@@ -42,11 +35,37 @@ async function registerBusiness(
         phoneNumber,
         businessType,
         businessCity,
-        user
+        userId
     } = req.body;
-    try {
-        await validateFormFields(req.body);
 
+    const user_id: string = (req.user as JWTUserPayload).id;
+
+    const regBusinessValidation = registerBusinessSchema.safeParse(req.body);
+
+    if (!regBusinessValidation.success) {
+        const error_formatted = regBusinessValidation.error.format();
+        return res
+            .status(403)
+            .json(
+                createErrorResponse(
+                    validationMessage,
+                    'APIError',
+                    error_formatted
+                )
+            );
+    }
+
+    if (userId !== user_id) {
+        return res
+            .status(401)
+            .json(
+                createErrorResponse(
+                    `Id ${userId} passed in the body does not match your logged in credentials!`
+                )
+            );
+    }
+
+    try {
         let business_image = '';
 
         if (req.file) {
@@ -67,19 +86,21 @@ async function registerBusiness(
             businessLogo: business_image
         };
 
-        const result = await userRepository.updateUser(user.id, userItem);
+        const result = await userRepository.updateUser(userId, userItem);
 
         if (!result) {
             return res
                 .status(400)
                 .json(
-                    createErrorResponse('Error saving new user to the database')
+                    createErrorResponse(
+                        'Error registering a business, please try again or contact support!'
+                    )
                 );
         }
 
         return res
             .status(200)
-            .json(createSuccessResponse('Sign up is successful'));
+            .json(createSuccessResponse('Business registered successfully!'));
     } catch (error) {
         return next(error);
     }

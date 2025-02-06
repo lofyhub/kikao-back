@@ -1,10 +1,10 @@
-interface SuccessResponse<T = null> {
+export interface SuccessResponse<T> {
     status: 'success';
     message: string;
     data: T | null;
 }
 
-interface ErrorResponse {
+export interface ErrorResponse {
     status: 'error';
     message: string;
     error: {
@@ -13,12 +13,10 @@ interface ErrorResponse {
     };
 }
 
-type ApiResponse<T = null> = SuccessResponse<T> | ErrorResponse;
-
-export const createSuccessResponse = <T = null>(
+export const createSuccessResponse = <T>(
     message: string,
     data: T | null = null
-): ApiResponse<T> => ({
+): SuccessResponse<T> => ({
     status: 'success',
     message,
     data
@@ -32,7 +30,7 @@ export const createErrorResponse = (
     message: string,
     type = 'APIError',
     details?: string | ZodError
-): ApiResponse => ({
+): ErrorResponse => ({
     status: 'error',
     message,
     error: {

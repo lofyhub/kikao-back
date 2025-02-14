@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
 export const registerBusinessSchema = z.object({
-    businessName: z.string(),
-    location: z.string(),
+    businessName: z.string().nonempty(),
+    location: z.string().nonempty(),
     // TODO: find a way to validate as phone number
-    phoneNumber: z.string(),
-    businessType: z.string(),
-    businessCity: z.string(),
-    userId: z.string().uuid()
+    phoneNumber: z.string().nonempty(),
+    businessType: z.string().nonempty(),
+    businessCity: z.string().nonempty()
 });
 
 export type BusinessInfo = {

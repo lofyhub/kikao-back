@@ -1,23 +1,28 @@
+import { ErrorCodes } from '../errors';
 export interface SuccessResponse<T> {
-    status: 'success';
+    status: StatusEnum.Success;
     message: string;
     data: T | null;
 }
 
 export interface ErrorResponse {
-    status: 'error';
+    status: StatusEnum.Error;
     message: string;
     error: {
-        type: string;
+        type: ErrorCodes;
         details?: string | ZodError;
     };
+}
+export enum StatusEnum {
+    Success = 'success',
+    Error = 'error'
 }
 
 export const createSuccessResponse = <T>(
     message: string,
     data: T | null = null
 ): SuccessResponse<T> => ({
-    status: 'success',
+    status: StatusEnum.Success,
     message,
     data
 });
@@ -28,10 +33,10 @@ export interface ZodError {
 
 export const createErrorResponse = (
     message: string,
-    type = 'APIError',
+    type = ErrorCodes.APIError,
     details?: string | ZodError
 ): ErrorResponse => ({
-    status: 'error',
+    status: StatusEnum.Error,
     message,
     error: {
         type,

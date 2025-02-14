@@ -20,15 +20,14 @@ A simple boilerplate code for bootstrapping a NodeJS Express backend in Typescri
 ## How to start
 
 1. Create a copy of `example.env` named `.env`
-2. `yarn install`
-3. `yarn run dev`
-4. `Start adding stuff`
+2. `pnpm install`
+3. `pnpm run dev`
 
 ## Commands
 
-* `yarn start` - Starts the app. Needs to be builded first
-* `yarn run build` - Builds the app (typescript compilation)
-* `yarn run dev` - Starts nodemon (Auto-restart on changes with auto-rebuild)
+* `pnpm start` - Starts the app. Needs to be builded first
+* `pnpm run build` - Builds the app (typescript compilation)
+* `pnpm run dev` - Starts nodemon (Auto-restart on changes with auto-rebuild)
 
 ## FAQ
 

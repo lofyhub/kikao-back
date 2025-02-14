@@ -6,6 +6,8 @@ import {
 import env from '../env';
 import OpenAI from 'openai';
 import { verifyJWTToken } from '../middlewares/verifyToken';
+import { ErrorCodes, ValidationError, validationMessage } from '../errors';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -13,6 +15,7 @@ const client = new OpenAI({
     apiKey: env.OPENAI_API_KEY
 });
 
+const promptTextSchema = z.string();
 async function generateDescription(
     req: Request,
     res: Response,
@@ -20,6 +23,16 @@ async function generateDescription(
 ): Promise<any> {
     try {
         const { promptText } = req.body;
+
+        const promptValidation = promptTextSchema.safeParse(promptText);
+        if (!promptValidation.success) {
+            return next(
+                new ValidationError(
+                    validationMessage,
+                    promptValidation.error.format()
+                )
+            );
+        }
 
         await client.chat.completions
             .create({
@@ -36,6 +49,7 @@ async function generateDescription(
             .catch((err: unknown) => {
                 const res_body = createErrorResponse(
                     'Failed to generate description',
+                    ErrorCodes.APIError,
                     err as string
                 );
                 return res.status(400).json(res_body);

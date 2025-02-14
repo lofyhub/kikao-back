@@ -5,8 +5,13 @@ export interface IBookmark {
 
 export interface IDBBookmark {
     id: string;
-    user_id: string;
-    listing_id: string;
-    created_at: Date;
-    updated_at: Date;
+    userId: string;
+    listingId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ResponseGetBookmarks {
+    bookmarks: IDBBookmark[];
+    count: number;
 }

@@ -23,7 +23,12 @@ import {
     userIdSchema,
     ratesIdSchema
 } from '../interfaces/listing';
-import { validationMessage } from '../errors';
+import {
+    ErrorCodes,
+    UnauthorizedError,
+    ValidationError,
+    validationMessage
+} from '../errors';
 
 const router = Router();
 
@@ -47,7 +52,7 @@ async function createUserListing(
     next: NextFunction
 ): Promise<any> {
     const {
-        title,
+        name,
         location,
         price,
         duration,
@@ -63,29 +68,19 @@ async function createUserListing(
         security,
         garbagecollection,
         roomnumber,
-        year,
-        userId
+        yearBuilt
     } = req.body;
 
-    // TODO: Ensure a user can only post a listing with his Id and not anyone elses
-    // Also here we are quite sure we have the user id from the token
-    const user_id: string = (req.user as JWTUserPayload).id;
-
-    if (userId !== user_id) {
-        return res
-            .status(401)
-            .json(
-                createErrorResponse(
-                    'Sorry, you are only able to create listings for yourself!'
-                )
-            );
-    }
+    const userId: string = (req.user as JWTUserPayload).id;
 
     if (!req.files || req.files.length === 0) {
         return res
             .status(400)
             .json(
-                createErrorResponse('Please upload some images with the data!')
+                createErrorResponse(
+                    'Please upload some images with the data!',
+                    ErrorCodes.APIError
+                )
             );
     }
 
@@ -95,23 +90,26 @@ async function createUserListing(
             : Object.values(req.files).flat();
 
         const uploadUrls: string[] = [];
-        for (let i = 0; i < files.length; ++i) {
-            const path: string = files[i].path;
-            const { imageURL } = await cloudinaryInstance.uploadImage(path);
+
+        files.map(async (file) => {
+            const { imageURL } = await cloudinaryInstance.uploadImage(
+                file.path
+            );
             if (imageURL) {
                 uploadUrls.push(imageURL);
             }
-        }
+        });
+
         const imageUrls = await uploadUrls;
 
         const listing: NewListing = {
-            name: title,
+            name,
             location,
             county,
             size,
             status,
             userId,
-            yearBuilt: year,
+            yearBuilt,
             images: imageUrls,
             description: description
         };
@@ -140,37 +138,19 @@ async function createUserListing(
 
         if (!listingValidation.success) {
             const error_formatted = listingValidation.error.format();
-            return res
-                .status(403)
-                .json(
-                    createErrorResponse(
-                        validationMessage,
-                        'APIError',
-                        error_formatted
-                    )
-                );
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
         } else if (!ratesValidation.success) {
             const error_formatted = ratesValidation.error.format();
-            return res
-                .status(403)
-                .json(
-                    createErrorResponse(
-                        validationMessage,
-                        'APIError',
-                        error_formatted
-                    )
-                );
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
         } else if (!compartmentsValidation.success) {
             const error_formatted = compartmentsValidation.error.format();
-            return res
-                .status(403)
-                .json(
-                    createErrorResponse(
-                        validationMessage,
-                        'APIError',
-                        error_formatted
-                    )
-                );
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
         }
 
         const result = await listingRepository.createListing(
@@ -192,79 +172,28 @@ async function deleteListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listing_id, user_id } = req.body;
+    const { listingId } = req.body;
 
     const userId: string = (req.user as JWTUserPayload).id;
 
-    const listingValidation = listingIdSchema.safeParse(listing_id);
-    const userValidation = userIdSchema.safeParse(user_id);
+    const listingValidation = listingIdSchema.safeParse(listingId);
 
     if (!listingValidation.success) {
         const error_formatted = listingValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    } else if (!userValidation.success) {
-        const error_formatted = userValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    }
-
-    if (userId !== user_id) {
-        return res
-            .status(401)
-            .json(
-                createErrorResponse(
-                    'Sorry, you are only able to delete your own listings!'
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
-        const listing_delete = await listingRepository.findListingById(
-            listing_id
-        );
-
-        if (!listing_delete || listing_delete?.id !== listing_id) {
-            return res
-                .status(401)
-                .json(
-                    createErrorResponse(
-                        'Sorry, you are only able to delete listings that only you have created'
-                    )
-                );
-        }
-
         const listing_to_delete = await listingRepository.deleteListing(
-            listing_id
+            listingId,
+            userId
         );
-
-        if (!listing_to_delete) {
-            return res
-                .status(404)
-                .json(
-                    createErrorResponse('Listing deletion was not successful!')
-                );
-        }
 
         return res
             .status(200)
             .json(
                 createSuccessResponse(
-                    'Successfully deleted listing',
+                    'Successfully deleted listing!',
                     listing_to_delete
                 )
             );
@@ -287,7 +216,6 @@ async function updateListing(
         yearBuilt,
         description,
         size,
-        userId,
         ratesId,
         price,
         duration,
@@ -302,55 +230,21 @@ async function updateListing(
         wifi
     } = req.body;
 
-    const user_id: string = (req.user as JWTUserPayload).id;
+    const userId: string = (req.user as JWTUserPayload).id;
 
-    const userIdValidation = userIdSchema.safeParse(userId);
     const listingIdValidation = listingIdSchema.safeParse(listingId);
     const ratesIdValidation = ratesIdSchema.safeParse(ratesId);
+    const compartmentIdValidation = listingId.safeParse(compartmentsId);
 
-    if (!userIdValidation.success) {
-        const error_formatted = userIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    } else if (!listingIdValidation.success) {
+    if (!listingIdValidation.success) {
         const error_formatted = listingIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     } else if (!ratesIdValidation.success) {
         const error_formatted = ratesIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    }
-
-    if (userId !== user_id) {
-        return res
-            .status(401)
-            .json(
-                createErrorResponse(
-                    'Sorry, you are only able to update your own listings!'
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
+    } else if (!compartmentIdValidation.success) {
+        const error_formatted = compartmentIdValidation.error.format();
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     const updates: UpdateListing = {
@@ -384,45 +278,26 @@ async function updateListing(
 
     if (!updateValidation.success) {
         const error_formatted = updateValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     const user_listing = await listingRepository.findListingById(listingId);
 
-    // TODO: A better way to verify the user updating the listing
-    if (!user_listing || user_listing?.userId !== user_id) {
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    'You can only update listing that you have created!'
-                )
-            );
+    // Ensure user can only update their listing and not others!
+    if (user_listing.userId !== userId) {
+        return next(
+            new UnauthorizedError(
+                'You can only update listing that you have created!'
+            )
+        );
     }
 
     try {
         const result = await listingRepository.updateListing(
             listingId,
+            userId,
             updates
         );
-
-        if (!result) {
-            return res
-                .status(404)
-                .json(
-                    createErrorResponse(
-                        'Listing not found or update was not successful.'
-                    )
-                );
-        }
 
         return res
             .status(200)
@@ -441,12 +316,17 @@ async function getListings(
 ): Promise<any> {
     try {
         const listings = await listingRepository.getAllListings();
+
+        const listingsData = {
+            listings,
+            count: listings.length
+        };
         return res
             .status(200)
             .json(
                 createSuccessResponse(
-                    'Succesfully retrieved listing!',
-                    listings
+                    'Succesfully retrieved listings!',
+                    listingsData
                 )
             );
     } catch (error) {
@@ -461,35 +341,15 @@ async function getListing(
 ): Promise<any> {
     const { Id } = req.body;
 
-    if (!Id) {
-        return res
-            .status(400)
-            .json(createErrorResponse('ID required in the body'));
-    }
-
     const idValidation = userIdSchema.safeParse(Id);
 
     if (!idValidation.success) {
         const error_formatted = idValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
         const listing = await listingRepository.findListingById(Id);
-
-        if (!listing) {
-            return res
-                .status(404)
-                .json(createErrorResponse(`Listing with id ${Id} not found.`));
-        }
 
         return res
             .status(200)

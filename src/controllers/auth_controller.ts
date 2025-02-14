@@ -13,7 +13,7 @@ import { User } from '../db/schema';
 import env from '../env';
 import { JWTUserPayload } from '../interfaces';
 import { registerBusinessSchema, BusinessInfo } from '../interfaces/auth';
-import { validationMessage } from '../errors';
+import { ErrorCodes, ValidationError, validationMessage } from '../errors';
 
 const router = Router();
 
@@ -29,14 +29,8 @@ async function registerBusiness(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const {
-        businessName,
-        location,
-        phoneNumber,
-        businessType,
-        businessCity,
-        userId
-    } = req.body;
+    const { businessName, location, phoneNumber, businessType, businessCity } =
+        req.body;
 
     const user_id: string = (req.user as JWTUserPayload).id;
 
@@ -44,25 +38,7 @@ async function registerBusiness(
 
     if (!regBusinessValidation.success) {
         const error_formatted = regBusinessValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    }
-
-    if (userId !== user_id) {
-        return res
-            .status(401)
-            .json(
-                createErrorResponse(
-                    `Id ${userId} passed in the body does not match your logged in credentials!`
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
@@ -77,7 +53,7 @@ async function registerBusiness(
             }
         }
 
-        const userItem: BusinessInfo = {
+        const businessInfo: BusinessInfo = {
             phoneNumber,
             businessName,
             businessLocation: location,
@@ -86,22 +62,20 @@ async function registerBusiness(
             businessLogo: business_image
         };
 
-        const result = await userRepository.updateUser(userId, userItem);
-
-        if (!result) {
-            return res
-                .status(400)
-                .json(
-                    createErrorResponse(
-                        'Error registering a business, please try again or contact support!'
-                    )
-                );
-        }
+        const result = await userRepository.updateBusiness(
+            user_id,
+            businessInfo
+        );
 
         return res
             .status(200)
-            .json(createSuccessResponse('Business registered successfully!'));
-    } catch (error) {
+            .json(
+                createSuccessResponse(
+                    'Business registered successfully!',
+                    result
+                )
+            );
+    } catch (error: unknown) {
         return next(error);
     }
 }
@@ -139,7 +113,7 @@ router.post(
                     .json(
                         createErrorResponse(
                             'An error occurred while logging out.',
-                            'InternalError',
+                            ErrorCodes.APIError,
                             err.message
                         )
                     );

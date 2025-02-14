@@ -8,7 +8,6 @@ import { IUser } from '../interfaces/user';
 const options = {
     expiresIn: '7d'
 };
-
 export function generateJWTToken(user: User): string {
     const { id, username, email, providerUserId, profileImage, provider } =
         user;

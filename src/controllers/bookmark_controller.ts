@@ -1,14 +1,12 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import bookmarkRepository from '../repository/bookmarkRepository';
-import {
-    createErrorResponse,
-    createSuccessResponse
-} from '../utils/responseUtils';
+import { createSuccessResponse } from '../utils/responseUtils';
 import { NewBookmark } from '../db/schema';
 import { verifyJWTToken } from '../middlewares/verifyToken';
 import { JWTUserPayload } from '../interfaces';
 import { listingIdSchema, userIdSchema } from '../interfaces/listing';
-import { validationMessage } from '../errors';
+import { ValidationError, validationMessage } from '../errors';
+import { ResponseGetBookmarks } from '../interfaces/bookmark';
 
 const router = Router();
 
@@ -17,45 +15,20 @@ async function addBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { userId, listingId } = req.body;
+    const { listingId } = req.body;
+    const userId: string = (req.user as JWTUserPayload).id;
 
-    if (!userId || !listingId) {
-        return res
-            .status(309)
-            .json(createErrorResponse('userId and listingId are required!'));
-    }
-
-    const userIdValidation = userIdSchema.safeParse(userId);
     const listingIdValidation = listingIdSchema.safeParse(listingId);
 
-    if (!userIdValidation.success) {
-        const error_formatted = userIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
-    } else if (!listingIdValidation.success) {
+    if (!listingIdValidation.success) {
         const error_formatted = listingIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
         const data: NewBookmark = {
-            userId: userId,
-            listingId: listingId
+            userId,
+            listingId
         };
         const result = bookmarkRepository.saveBookmark(data);
 
@@ -74,32 +47,17 @@ async function fetchUserBookmarks(
 ): Promise<any> {
     const { userId } = req.body;
 
-    if (!userId) {
-        return res.status(309).json(createErrorResponse('userId is required!'));
-    }
     const userIdValidation = userIdSchema.safeParse(userId);
 
     if (!userIdValidation.success) {
         const error_formatted = userIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
-        const bookmarks = await bookmarkRepository.findUserBookmarkById(userId);
-
-        if (!bookmarks || bookmarks.length === 0) {
-            return res
-                .status(404)
-                .json(createErrorResponse('No bookmarks found for this user.'));
-        }
+        const bookmarks = await bookmarkRepository.findUserBookmarksById(
+            userId
+        );
 
         return res
             .status(200)
@@ -109,7 +67,7 @@ async function fetchUserBookmarks(
                     bookmarks
                 )
             );
-    } catch (error) {
+    } catch (error: unknown) {
         return next(error);
     }
 }
@@ -120,51 +78,33 @@ async function fetchListingBookmarks(
     next: NextFunction
 ): Promise<any> {
     const { listingId } = req.body;
-    if (!listingId) {
-        return res
-            .status(309)
-            .json(createErrorResponse('listingId is required!'));
-    }
 
     const listingIdValidation = listingIdSchema.safeParse(listingId);
 
     if (!listingIdValidation.success) {
         const error_formatted = listingIdValidation.error.format();
-        return res
-            .status(403)
-            .json(
-                createErrorResponse(
-                    validationMessage,
-                    'APIError',
-                    error_formatted
-                )
-            );
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
-        const bookmarks = await bookmarkRepository.findUserBookmarkById(
+        const bookmarks = await bookmarkRepository.fetchListingBookmarks(
             listingId
         );
 
-        if (!bookmarks || bookmarks.length === 0) {
-            return res
-                .status(404)
-                .json(
-                    createErrorResponse(
-                        'No bookmarks found for the given listing ID.'
-                    )
-                );
-        }
+        const bookmarksData: ResponseGetBookmarks = {
+            bookmarks,
+            count: bookmarks.length
+        };
 
         return res
             .status(200)
             .json(
                 createSuccessResponse(
                     'Bookmarks fetched successfully',
-                    bookmarks
+                    bookmarksData
                 )
             );
-    } catch (error) {
+    } catch (error: unknown) {
         return next(error);
     }
 }
@@ -174,48 +114,38 @@ async function deleteBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { userId, bookmarkId } = req.body;
+    const { bookmarkId } = req.body;
+    const userId: string = (req.user as JWTUserPayload).id;
 
-    if (!userId || !bookmarkId) {
-        return res
-            .status(400)
-            .json(createErrorResponse('UserId and BookmarkId are required'));
-    }
+    const validBookmarkId = userIdSchema.safeParse(bookmarkId);
 
-    const user_id: string = (req.user as JWTUserPayload).id;
-
-    if (userId !== user_id) {
-        return res
-            .status(401)
-            .json(
-                createErrorResponse(
-                    'Sorry, you are only able to delete your own Bookmark!'
-                )
-            );
+    if (!validBookmarkId.success) {
+        const error_formatted = validBookmarkId.error.format();
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
         const deleted_bookmark = await bookmarkRepository.deleteBookmark(
-            bookmarkId
+            bookmarkId,
+            userId
         );
 
         return res
             .status(201)
             .json(
                 createSuccessResponse(
-                    'Bookmark deleted successfully',
+                    'Bookmark deleted successfully!',
                     deleted_bookmark
                 )
             );
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
 // Routes
-router.post('/bookmarks', verifyJWTToken, addBookmark);
 router.post('/user/bookmarks', fetchUserBookmarks);
+router.post('/bookmarks', verifyJWTToken, addBookmark);
 router.post('/listing/bookmarks', fetchListingBookmarks);
 router.delete('/delete/bookmarks', verifyJWTToken, deleteBookmark);
 

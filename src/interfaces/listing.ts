@@ -72,6 +72,11 @@ export interface ListingRatesCompartments {
     updatedAt: string;
 }
 
+export interface ResponseGetUser {
+    userListings: ListingRatesCompartments[];
+    count: number;
+}
+
 export interface UpdateListing {
     name?: string;
     location?: string;
@@ -95,26 +100,26 @@ export interface UpdateListing {
 }
 
 export const NewListingSchema = z.object({
-    name: z.string(),
-    location: z.string(),
-    county: z.string(),
-    status: z.string(),
-    yearBuilt: z.string(),
-    description: z.string(),
-    size: z.string(),
-    userId: z.string(),
-    images: z.string().array()
+    name: z.string().min(4).nonempty().max(50),
+    location: z.string().min(4).nonempty().max(50),
+    county: z.string().min(4).nonempty(),
+    status: z.string().nonempty(),
+    yearBuilt: z.string().min(4).max(4).regex(/^\S*$/),
+    description: z.string().min(20).nonempty(),
+    size: z.string().nonempty(),
+    userId: z.string().uuid().nonempty(),
+    images: z.string().nonempty().array()
 });
 
 export const NewRateSchema = z.object({
-    price: z.number(),
-    duration: z.string(),
-    countryCode: z.string()
+    price: z.number().min(3000),
+    duration: z.string().nonempty(),
+    countryCode: z.string().nonempty()
 });
 
 export const NewCompartmentSchema = z.object({
     bedrooms: z.number(),
-    totalRooms: z.string(),
+    totalRooms: z.string().nonempty(),
     washRooms: z.number(),
     parking: z.boolean(),
     roomNumber: z.boolean(),

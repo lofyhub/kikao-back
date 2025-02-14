@@ -7,7 +7,8 @@ import {
     NotFoundError,
     UpdateFailedError,
     DeleteFailedError,
-    GenericError
+    GenericError,
+    UnauthorizedError
 } from '../errors';
 import {
     ListingRatesCompartments,
@@ -74,11 +75,26 @@ class ListingRepository {
                     `Compartment creation was not successful!`
                 );
             }
+            const ratesNew = rateResult[0];
+            const compartmentsNew = compartmentsResult[0];
 
             return {
                 ...listingResult[0],
-                rates: rateResult[0],
-                compartments: compartmentsResult[0]
+                rates: {
+                    price: ratesNew.price,
+                    duration: ratesNew.duration,
+                    countryCode: ratesNew.countryCode
+                },
+                compartments: {
+                    bedrooms: compartmentsNew.bedrooms,
+                    totalRooms: compartmentsNew.totalRooms,
+                    washRooms: compartmentsNew.washRooms,
+                    parking: compartmentsNew.parking,
+                    roomNumber: compartmentsNew.roomNumber,
+                    security: compartmentsNew.security,
+                    garbageCollection: compartmentsNew.garbageCollection,
+                    wifi: compartmentsNew.wifi
+                }
             };
         });
 
@@ -87,7 +103,7 @@ class ListingRepository {
 
     async findListingById(
         listing_id: string
-    ): Promise<ListingRatesCompartments | null> {
+    ): Promise<ListingRatesCompartments> {
         const result = await db
             .select({
                 id: listings.id,
@@ -122,8 +138,8 @@ class ListingRepository {
             .innerJoin(rates, eq(rates.listingId, listings.id))
             .innerJoin(compartments, eq(compartments.listingId, listings.id));
 
-        if (result.length === 0) {
-            return null;
+        if (!result || result.length === 0) {
+            throw new NotFoundError('Listing Not found!');
         }
 
         return result[0];
@@ -132,8 +148,9 @@ class ListingRepository {
     // Update a listing by its ID
     async updateListing(
         listing_id: string,
+        user_id: string,
         data: UpdateListing
-    ): Promise<ListingRatesCompartments | null> {
+    ): Promise<ListingRatesCompartments> {
         const {
             ratesId,
             price,
@@ -162,12 +179,37 @@ class ListingRepository {
             id: string,
             field: string
         ) => {
+            // TODO: Refactor or some better way to handle this scenario
+            // prevent a user from randomy updating another users rates or compartmens
+            if (field === 'rates') {
+                const res = await db
+                    .select()
+                    .from(rates)
+                    .where(eq(rates.id, ratesId));
+
+                if (res[0].listingId !== listing_id) {
+                    throw new UnauthorizedError(
+                        'You can only update a rate that you created!'
+                    );
+                }
+            } else if (field === 'compartments') {
+                const res = await db
+                    .select()
+                    .from(compartments)
+                    .where(eq(rates.id, compartmentsId));
+
+                if (res[0].listingId !== listing_id) {
+                    throw new UnauthorizedError(
+                        'You can only update a compartment that you created!'
+                    );
+                }
+            }
             const result = await db
                 .update(table)
                 .set(data)
                 .where(eq(table.id, id));
 
-            if (!result) {
+            if (!result || result.length === 0) {
                 throw new UpdateFailedError(
                     `No changes were made to ${field} with ID ${id}.`
                 );
@@ -260,25 +302,23 @@ class ListingRepository {
         return result;
     }
     // Delete a listing by its ID
-    async deleteListing(listing_id: string): Promise<Listing | null> {
-        const listing = await db
-            .select()
-            .from(listings)
-            .where(eq(listings.id, listing_id));
+    async deleteListing(listing_id: string, user_id: string): Promise<Listing> {
+        const listing = await this.findListingById(listing_id);
 
-        if (!listing || listing.length === 0) {
-            throw new NotFoundError(`Listing with ID ${listing_id} not found.`);
+        if (listing.userId !== user_id) {
+            throw new GenericError('You can only delete your listing!');
         }
 
         const is_deleted = await db
             .delete(listings)
-            .where(eq(listings.id, listing_id));
+            .where(eq(listings.id, listing_id))
+            .returning();
 
-        if (!is_deleted) {
+        if (!is_deleted || is_deleted.length === 0) {
             throw new DeleteFailedError(`Listing deletion was not successful.`);
         }
 
-        return listing[0];
+        return listing;
     }
 
     // Get all listings for a user based on their ID

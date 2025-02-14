@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export interface IReview {
     user_id: string;
     review_text: string;
@@ -14,3 +16,9 @@ export interface IDBReview {
     created_at: Date;
     updated_at: Date;
 }
+
+export const reviewSchema = z.object({
+    reviewText: z.string().nonempty(),
+    rating: z.number(),
+    listingId: z.string().uuid()
+});

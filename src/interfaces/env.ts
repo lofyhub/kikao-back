@@ -1,3 +1,4 @@
+import { z } from 'zod';
 export interface EnvVariables {
     PORT: number;
     debug: boolean;
@@ -18,3 +19,24 @@ export interface EnvVariables {
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_CALLBACK_URL: string;
 }
+
+export const EnvVariableSchema = z.object({
+    PORT: z.number(),
+    debug: z.boolean(),
+    IMAGE_UPLOAD_SIZE_LIMIT: z.number(),
+    FRONTEND_APP_LOGIN_REDIRECT: z.string().nonempty(),
+    GOOGLE_APP_OAUTH_REDIRECT: z.string().nonempty(),
+    TEST_MODE: z.boolean(),
+    OPENAI_API_KEY: z.string().nonempty(),
+    CLOUDINARY_API_SECRET: z.string().nonempty(),
+    CLOUDINARY_API_KEY: z.string().nonempty(),
+    CLOUD_NAME: z.string().nonempty(),
+    CLOUDINARY_API_ENV: z.string().nonempty(),
+    DATABASE_URL: z.string().nonempty(),
+    SECRET: z.string().nonempty(),
+    NODE_ENV: z.enum(['development', 'production', 'test']),
+    JWT_SECRET: z.string().nonempty(),
+    GOOGLE_CLIENT_ID: z.string().nonempty(),
+    GOOGLE_CLIENT_SECRET: z.string().nonempty(),
+    GOOGLE_CALLBACK_URL: z.string().nonempty()
+});

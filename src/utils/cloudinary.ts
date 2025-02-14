@@ -2,6 +2,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { unlinkSync } from 'fs';
 import env from '../env';
 import { ICloudinary, ICloudinaryResponse } from '../interfaces/index';
+import { CloudinaryError } from '../errors';
 
 export class Cloudinary implements ICloudinary {
     constructor() {
@@ -40,14 +41,10 @@ export class Cloudinary implements ICloudinary {
                 statusCode: 200,
                 imageURL: url
             };
-        } catch (error: any) {
-            console.log('Error uploading image to cloudinary: ', error);
+        } catch (error: unknown) {
             unlinkSync(imageToUpload);
-            return {
-                isSuccess: false,
-                message: 'Internal Server Error',
-                statusCode: 500
-            };
+            const message = 'Error uploading your image!';
+            throw new CloudinaryError(message, error as string);
         }
     };
 }

@@ -1,4 +1,4 @@
-import { EnvVariables } from './interfaces/env';
+import { EnvVariables, EnvVariableSchema } from './interfaces/env';
 
 /** HERE YOU CAN ADD ALL YOUR ENVIRONMENT VARIABLES */
 const DEBUG = process.env.DEBUG || true;
@@ -8,7 +8,7 @@ if (DEBUG) {
 
 const PORT = process.env.PORT || 9000;
 const TEST_MODE = process.env.TEST_MODE;
-const IMAGE_UPLOAD_SIZE_LIMIT = process.env.IMAGE_UPLOAD_SIZE_LIMIT;
+const IMAGE_UPLOAD_SIZE_LIMIT = process.env.IMAGE_UPLOAD_SIZE_LIMIT || 5242880 ; // 5242880  # 5MB in bytes
 const OPENAI_API_KEY = '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';
 const CLOUD_NAME = 'deye3gicq';
 const CLOUDINARY_API_KEY = '824696885955381';
@@ -40,7 +40,7 @@ const GOOGLE_APP_OAUTH_REDIRECT =
 const env: EnvVariables = {
     PORT: Number(PORT),
     debug: Boolean(DEBUG),
-    IMAGE_UPLOAD_SIZE_LIMIT: Number(IMAGE_UPLOAD_SIZE_LIMIT!),
+    IMAGE_UPLOAD_SIZE_LIMIT: Number(IMAGE_UPLOAD_SIZE_LIMIT),
     FRONTEND_APP_LOGIN_REDIRECT: FRONTEND_APP_LOGIN_REDIRECT,
     GOOGLE_APP_OAUTH_REDIRECT: GOOGLE_APP_OAUTH_REDIRECT,
     TEST_MODE: Boolean(TEST_MODE),
@@ -58,4 +58,11 @@ const env: EnvVariables = {
     GOOGLE_CALLBACK_URL: GOOGLE_CALLBACK_URL
 };
 
+const validateEnv = EnvVariableSchema.safeParse(env);
+
+if (!validateEnv.success) {
+    const errors = validateEnv.error.format();
+    console.log(`Error parsing env variables:`);
+    console.log(errors)
+}
 export default env;

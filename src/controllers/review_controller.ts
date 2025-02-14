@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import reviewRepository from '../repository/reviewRepository';
-import {
-    createErrorResponse,
-    createSuccessResponse
-} from '../utils/responseUtils';
+import { createSuccessResponse } from '../utils/responseUtils';
 import { NewReview } from '../db/schema';
+import { JWTUserPayload } from '../interfaces';
+import { listingIdSchema, userIdSchema } from '../interfaces/listing';
+import { ValidationError, validationMessage } from '../errors';
+import { reviewSchema } from '../interfaces/review';
+import { verifyJWTToken } from '../middlewares/verifyToken';
 
 const router = Router();
 
@@ -13,16 +15,14 @@ async function saveReview(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { userId, rating, reviewText, listingId } = req.body;
+    const { rating, reviewText, listingId } = req.body;
 
-    if (!userId || !rating || !reviewText || !listingId) {
-        return res
-            .status(400)
-            .json(
-                createErrorResponse(
-                    'Missing required fields: userId, rating, reviewText, or listingId.'
-                )
-            );
+    const userId: string = (req.user as JWTUserPayload).id;
+    const validateReview = reviewSchema.safeParse(req.body);
+
+    if (!validateReview.success) {
+        const validateError = validateReview.error.format();
+        return next(new ValidationError(validationMessage, validateError));
     }
 
     const data: NewReview = {
@@ -41,8 +41,7 @@ async function saveReview(
                 createSuccessResponse('Review saved successfully', savedReview)
             );
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -51,28 +50,19 @@ async function getListingReviews(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listing_id } = req.body;
+    const { listingId } = req.body;
 
-    if (!listing_id) {
-        return res
-            .status(400)
-            .json(createErrorResponse('No ReviewID provided!'));
+    const validListingId = listingIdSchema.safeParse(listingId);
+
+    if (!validListingId.success) {
+        const validateError = validListingId.error.format();
+        return next(new ValidationError(validationMessage, validateError));
     }
 
     try {
         const reviews = await reviewRepository.findReviewsByListingId(
-            listing_id
+            listingId
         );
-
-        if (!reviews || reviews.length === 0) {
-            return res
-                .status(404)
-                .json(
-                    createErrorResponse(
-                        'No reviews found for the given listing ID.'
-                    )
-                );
-        }
 
         return res
             .status(200)
@@ -80,8 +70,7 @@ async function getListingReviews(
                 createSuccessResponse('Reviews fetched successfully', reviews)
             );
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
@@ -90,20 +79,21 @@ async function deleteReview(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { review_id } = req.body;
+    const { reviewId } = req.body;
 
-    if (!review_id || typeof review_id !== 'string') {
-        return res
-            .status(400)
-            .json(
-                createErrorResponse(
-                    `Review ID ${review_id} is required and must be a string.`
-                )
-            );
+    const userId: string = (req.user as JWTUserPayload).id;
+    const validReviewId = userIdSchema.safeParse(reviewId);
+
+    if (!validReviewId.success) {
+        const error_formatted = validReviewId.error.format();
+        return next(new ValidationError(validationMessage, error_formatted));
     }
 
     try {
-        const savedReview = await reviewRepository.deleteReview(review_id);
+        const savedReview = await reviewRepository.deleteReview(
+            reviewId,
+            userId
+        );
 
         return res
             .status(201)
@@ -114,13 +104,12 @@ async function deleteReview(
                 )
             );
     } catch (error) {
-        next(error);
-        return;
+        return next(error);
     }
 }
 
-router.post('/reviews/', saveReview);
-router.delete('/reviews/', deleteReview);
-router.post('/author/reviews/', getListingReviews);
+router.get('/user/reviews/', getListingReviews);
+router.post('/user/reviews/', verifyJWTToken, saveReview);
+router.delete('/user/reviews/', verifyJWTToken, deleteReview);
 
 export default router;

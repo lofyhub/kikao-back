@@ -23,13 +23,7 @@ export function errorHandler(
     if (err instanceof NotFoundError) {
         return res
             .status(404)
-            .json(
-                createErrorResponse(
-                    err.message,
-                    ErrorCodes.APIError,
-                    err.detail
-                )
-            );
+            .json(createErrorResponse(err.message, err.detail));
     } else if (err instanceof ValidationError) {
         return res
             .status(403)
@@ -43,33 +37,15 @@ export function errorHandler(
     } else if (err instanceof UnauthorizedError) {
         return res
             .status(401)
-            .json(
-                createErrorResponse(
-                    err.message,
-                    ErrorCodes.APIError,
-                    err.details
-                )
-            );
+            .json(createErrorResponse(err.message, err.details));
     } else if (err instanceof DeleteFailedError) {
         return res
             .status(403)
-            .json(
-                createErrorResponse(
-                    err.message,
-                    ErrorCodes.APIError,
-                    err.details
-                )
-            );
+            .json(createErrorResponse(err.message, err.details));
     } else if (err instanceof GenericError) {
         return res
             .status(403)
-            .json(
-                createErrorResponse(
-                    err.message,
-                    ErrorCodes.APIError,
-                    err.details
-                )
-            );
+            .json(createErrorResponse(err.message, err.details));
     } else if (err instanceof multer.MulterError) {
         // A Multer error occurred when uploading.
         return res
@@ -88,7 +64,6 @@ export function errorHandler(
                 createErrorResponse(err.message, ErrorCodes.PGError, err.detail)
             );
     } else {
-        // Handle unexpected errors
         return res
             .status(500)
             .json(

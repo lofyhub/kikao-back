@@ -8,7 +8,7 @@ if (DEBUG) {
 
 const PORT = process.env.PORT || 9000;
 const TEST_MODE = process.env.TEST_MODE;
-const IMAGE_UPLOAD_SIZE_LIMIT = process.env.IMAGE_UPLOAD_SIZE_LIMIT || 5242880 ; // 5242880  # 5MB in bytes
+const IMAGE_UPLOAD_SIZE_LIMIT = process.env.IMAGE_UPLOAD_SIZE_LIMIT || 5242880; // 5242880  # 5MB in bytes
 const OPENAI_API_KEY = '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';
 const CLOUD_NAME = 'deye3gicq';
 const CLOUDINARY_API_KEY = '824696885955381';
@@ -63,6 +63,6 @@ const validateEnv = EnvVariableSchema.safeParse(env);
 if (!validateEnv.success) {
     const errors = validateEnv.error.format();
     console.log(`Error parsing env variables:`);
-    console.log(errors)
+    console.log(errors);
 }
 export default env;

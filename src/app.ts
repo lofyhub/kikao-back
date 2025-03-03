@@ -6,6 +6,7 @@ import reviewController from './controllers/review_controller';
 import healthController from './controllers/health_check';
 import authController from './controllers/auth_controller';
 import userController from './controllers/user_controller';
+import paymentsController from './controllers/payment_controller';
 import { errorHandler } from './middlewares/errorHandler';
 import { RouteNotFound } from './middlewares/routeNotFound';
 import { rateLimitHandler } from './middlewares/rateLimitHandler';
@@ -25,7 +26,7 @@ app.use(compression());
 app.use(bodyParser());
 app.use(
     rateLimit({
-        windowMs: 15 * 60 * 1000,
+        windowMs: 15 * 60 * 100,
         max: 100,
         handler: rateLimitHandler
     })
@@ -41,6 +42,7 @@ app.use('/api/v1/', reviewController);
 app.use('/api/v1/', listingsController);
 app.use('/api/v1/', descriptionController);
 app.use('/api/v1/', bookmarkController);
+app.use('/api/v1/', paymentsController);
 app.use(RouteNotFound);
 app.use(errorHandler);
 

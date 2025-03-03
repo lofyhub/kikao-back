@@ -1,5 +1,3 @@
-CREATE TYPE "public"."gender" AS ENUM('male', 'female', 'other', 'prefer not to say');--> statement-breakpoint
-CREATE TYPE "public"."provider" AS ENUM('google', 'apple', 'facebook', 'twitter', 'email');--> statement-breakpoint
 CREATE TABLE "bookmarks" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -25,7 +23,6 @@ CREATE TABLE "compartments" (
 --> statement-breakpoint
 CREATE TABLE "listings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"location" varchar(255) NOT NULL,
 	"county" varchar(255) NOT NULL,
@@ -35,7 +32,20 @@ CREATE TABLE "listings" (
 	"images" text[] DEFAULT '{""}' NOT NULL,
 	"size" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp(3) DEFAULT now() NOT NULL
+	"updated_at" timestamp(3) DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "payments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"amount" numeric(10, 2) NOT NULL,
+	"phone_number" varchar(20) NOT NULL,
+	"transaction_id" varchar(100),
+	"status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "payments_transaction_id_unique" UNIQUE("transaction_id")
 );
 --> statement-breakpoint
 CREATE TABLE "rates" (
@@ -60,14 +70,14 @@ CREATE TABLE "reviews" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"gender" "gender" NOT NULL,
+	"gender" text NOT NULL,
 	"is_linked" boolean DEFAULT false NOT NULL,
 	"username" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"kikao_type" varchar(50) NOT NULL,
 	"profile_image" varchar(255),
 	"phone_number" varchar(15),
-	"provider" "provider",
+	"provider" varchar(15) NOT NULL,
 	"provider_user_id" varchar(255) NOT NULL,
 	"provider_picture_url" varchar(255),
 	"business_name" varchar(255),
@@ -85,6 +95,7 @@ ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_user_id_users_id_fk" FOREIGN K
 ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_listing_id_listings_id_fk" FOREIGN KEY ("listing_id") REFERENCES "public"."listings"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "compartments" ADD CONSTRAINT "compartments_listing_id_listings_id_fk" FOREIGN KEY ("listing_id") REFERENCES "public"."listings"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "listings" ADD CONSTRAINT "listings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payments" ADD CONSTRAINT "payments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rates" ADD CONSTRAINT "rates_listing_id_listings_id_fk" FOREIGN KEY ("listing_id") REFERENCES "public"."listings"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_listing_id_listings_id_fk" FOREIGN KEY ("listing_id") REFERENCES "public"."listings"("id") ON DELETE no action ON UPDATE no action;

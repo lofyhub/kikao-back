@@ -8,30 +8,24 @@ import {
     foreignKey,
     text,
     integer,
-    pgEnum
+    pgEnum,
+    serial,
+    decimal
 } from 'drizzle-orm/pg-core';
 import { createSelectSchema } from 'drizzle-zod';
-
-export const provider = pgEnum('provider', [
-    'google',
-    'apple',
-    'facebook',
-    'twitter',
-    'email'
-]);
 
 export const users = pgTable(
     'users',
     {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        gender: text().notNull(),
+        gender: text('gender').notNull(),
         isLinked: boolean('is_linked').default(false).notNull(),
         username: varchar({ length: 255 }).notNull(),
         email: varchar({ length: 255 }).notNull(),
         kikaoType: varchar('kikao_type', { length: 50 }).notNull(),
         profileImage: varchar('profile_image', { length: 255 }),
         phoneNumber: varchar('phone_number', { length: 15 }),
-        provider: provider(),
+        provider: varchar('provider', { length: 15 }).notNull(),
         providerUserId: varchar('provider_user_id', { length: 255 }).notNull(),
         providerPictureUrl: varchar('provider_picture_url', { length: 255 }),
         businessName: varchar('business_name', { length: 255 }),
@@ -190,6 +184,27 @@ export const rates = pgTable(
     ]
 );
 
+export const payments = pgTable(
+    'payments',
+    {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        userId: uuid('user_id').notNull(),
+        amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+        phoneNumber: varchar('phone_number', { length: 20 }).notNull(),
+        transactionId: varchar('transaction_id', { length: 100 }).unique(),
+        status: varchar('status', { length: 20 }).notNull().default('pending'),
+        createdAt: timestamp('created_at').defaultNow(),
+        updatedAt: timestamp('updated_at').defaultNow()
+    },
+    (table) => [
+        foreignKey({
+            columns: [table.userId],
+            foreignColumns: [users.id],
+            name: 'payments_user_id_users_id_fk'
+        })
+    ]
+);
+
 // Types
 export type NewUser = typeof users.$inferInsert;
 export type NewBookmark = typeof bookmarks.$inferInsert;
@@ -197,6 +212,8 @@ export type NewListing = typeof listings.$inferInsert;
 export type NewCompartment = typeof compartments.$inferInsert;
 export type NewRate = typeof rates.$inferInsert;
 export type NewReview = typeof reviews.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type NewPayment = typeof payments.$inferInsert;
 
 export const UserSelect = createSelectSchema(users);
 export const BookmarkSelect = createSelectSchema(bookmarks);

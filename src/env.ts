@@ -36,6 +36,9 @@ const GOOGLE_APP_OAUTH_REDIRECT =
     process.env.GOOGLE_APP_OAUTH_REDIRECT ||
     'http://localhost:9000/api/v1/oauth/google/callback';
 
+const SAFARICOM_CONSUMER_KEY = '5x4h9DPDXOO8O4TtXkBa5zhqRgEjGoQt';
+const SAFARICOM_CONSUMER_SECRET = '3E58HL3bAkQMoGnS';
+
 // Make sure to add your env variables to this object so that they are exported to the rest of the application
 const env: EnvVariables = {
     PORT: Number(PORT),
@@ -55,7 +58,9 @@ const env: EnvVariables = {
     JWT_SECRET: JWT_SECRET,
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: GOOGLE_CLIENT_SECRET,
-    GOOGLE_CALLBACK_URL: GOOGLE_CALLBACK_URL
+    GOOGLE_CALLBACK_URL: GOOGLE_CALLBACK_URL,
+    SAFARICOM_CONSUMER_KEY: SAFARICOM_CONSUMER_KEY,
+    SAFARICOM_CONSUMER_SECRET: SAFARICOM_CONSUMER_SECRET
 };
 
 const validateEnv = EnvVariableSchema.safeParse(env);

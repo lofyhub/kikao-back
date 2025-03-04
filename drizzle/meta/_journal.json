@@ -8,6 +8,20 @@
       "when": 1741014815278,
       "tag": "0000_married_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1741100975770,
+      "tag": "0001_adorable_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1741112680250,
+      "tag": "0002_exotic_the_liberteens",
+      "breakpoints": true
     }
   ]
 }

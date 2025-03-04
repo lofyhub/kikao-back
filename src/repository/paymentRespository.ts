@@ -2,6 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db';
 import { NotFoundError, UpdateFailedError } from '../errors';
 import { payments, Payment, NewPayment } from '../db/schema';
+import { PaymentCallbackData } from '../interfaces/payments';
 
 class PaymentRepository {
     async createPayment(payment: NewPayment): Promise<Payment> {
@@ -33,19 +34,37 @@ class PaymentRepository {
             .offset(offset);
     }
 
-    async updatePaymentStatus(
-        transactionId: string,
-        status: string
-    ): Promise<Payment> {
+    async updatePaymentStatus(data: PaymentCallbackData): Promise<Payment> {
+        const {
+            merchantRequestId,
+            checkoutRequestId,
+            mpesaReceiptNumber,
+            transactionDate,
+            phoneNumber,
+            amount,
+            resultDescription,
+            resultCode
+        } = data;
+
         const [updatedPayment] = await db
             .update(payments)
-            .set({ status, updatedAt: new Date() })
-            .where(eq(payments.transactionId, transactionId))
+            .set({
+                merchantRequestId,
+                checkoutRequestId,
+                mpesaReceiptNumber,
+                transactionDate,
+                phoneNumber,
+                amount,
+                resultDescription,
+                resultCode,
+                updatedAt: new Date()
+            })
+            .where(eq(payments.checkoutRequestId, checkoutRequestId))
             .returning();
 
         if (!updatedPayment) {
             throw new UpdateFailedError(
-                `Payment with transactionId ${transactionId} not found`
+                `Payment with Receipt Number ${mpesaReceiptNumber} was not updated!`
             );
         }
         return updatedPayment;

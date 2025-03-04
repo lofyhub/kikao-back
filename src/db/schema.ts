@@ -7,10 +7,7 @@ import {
     timestamp,
     foreignKey,
     text,
-    integer,
-    pgEnum,
-    serial,
-    decimal
+    integer
 } from 'drizzle-orm/pg-core';
 import { createSelectSchema } from 'drizzle-zod';
 
@@ -18,7 +15,7 @@ export const users = pgTable(
     'users',
     {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        gender: text('gender').notNull(),
+        gender: varchar('gender', { length: 15 }).notNull(),
         isLinked: boolean('is_linked').default(false).notNull(),
         username: varchar({ length: 255 }).notNull(),
         email: varchar({ length: 255 }).notNull(),
@@ -189,10 +186,27 @@ export const payments = pgTable(
     {
         id: uuid().defaultRandom().primaryKey().notNull(),
         userId: uuid('user_id').notNull(),
-        amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+        amount: varchar('phone_number', { length: 20 }).notNull(),
         phoneNumber: varchar('phone_number', { length: 20 }).notNull(),
         transactionId: varchar('transaction_id', { length: 100 }).unique(),
         status: varchar('status', { length: 20 }).notNull().default('pending'),
+        merchantRequestId: varchar('merchant_request_id', {
+            length: 20
+        }).notNull(),
+        checkoutRequestId: varchar('checkout_request_id', {
+            length: 50
+        }).notNull(),
+        responseCode: varchar('response_code', { length: 5 }).notNull(),
+        responseDescription: varchar('response_description', {
+            length: 100
+        }).notNull(),
+        customerMessage: varchar('customer_message', { length: 100 }).notNull(),
+        resultDescription: varchar('result_description', {
+            length: 100
+        }).notNull(),
+        mpesaReceiptNumber: varchar('mpesa_receipt_number', { length: 20 }),
+        transactionDate: varchar('transaction_date', { length: 100 }).notNull(),
+        resultCode: varchar('result_code', { length: 100 }).notNull(),
         createdAt: timestamp('created_at').defaultNow(),
         updatedAt: timestamp('updated_at').defaultNow()
     },

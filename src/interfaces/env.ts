@@ -18,6 +18,8 @@ export interface EnvVariables {
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_CALLBACK_URL: string;
+    SAFARICOM_CONSUMER_KEY: string;
+    SAFARICOM_CONSUMER_SECRET: string;
 }
 
 export const EnvVariableSchema = z.object({
@@ -38,5 +40,7 @@ export const EnvVariableSchema = z.object({
     JWT_SECRET: z.string().nonempty(),
     GOOGLE_CLIENT_ID: z.string().nonempty(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty(),
-    GOOGLE_CALLBACK_URL: z.string().nonempty()
+    GOOGLE_CALLBACK_URL: z.string().nonempty(),
+    SAFARICOM_CONSUMER_KEY: z.string().nonempty(),
+    SAFARICOM_CONSUMER_SECRET: z.string().nonempty()
 });

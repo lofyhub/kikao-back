@@ -71,20 +71,20 @@ async function createUserListing(
         yearBuilt
     } = req.body;
 
-    const userId: string = (req.user as JWTUserPayload).id;
-
-    if (!req.files || req.files.length === 0) {
-        return res
-            .status(400)
-            .json(
-                createErrorResponse(
-                    'Please upload some images with the data!',
-                    ErrorCodes.APIError
-                )
-            );
-    }
-
     try {
+        const userId: string = (req.user as JWTUserPayload).id;
+
+        if (!req.files || req.files.length === 0) {
+            return res
+                .status(400)
+                .json(
+                    createErrorResponse(
+                        'Please upload some images with the data!',
+                        ErrorCodes.APIError
+                    )
+                );
+        }
+
         const files: File[] = Array.isArray(req.files)
             ? req.files
             : Object.values(req.files).flat();

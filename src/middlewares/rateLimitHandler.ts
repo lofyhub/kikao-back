@@ -6,7 +6,9 @@ export async function rateLimitHandler(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    console.warn(`DDoS Attempt from ${req.ip}`);
+    console.warn(`DDoS Attempt from user ${req.user}`);
+    console.warn(`DDoS Attempt from ip ${req.ip}`);
+
     const message =
         "Hold your horses! 🐎 You're sending too many requests. Give it a minute and try again, or we might call in the cavalry! 🛡️";
 

@@ -38,6 +38,8 @@ const GOOGLE_APP_OAUTH_REDIRECT =
 
 const SAFARICOM_CONSUMER_KEY = '5x4h9DPDXOO8O4TtXkBa5zhqRgEjGoQt';
 const SAFARICOM_CONSUMER_SECRET = '3E58HL3bAkQMoGnS';
+const SAFARICOM_LIPANAMPESA_CALLBACK =
+    'http://localhost:9000/api/v1/lipanampesa/success';
 
 // Make sure to add your env variables to this object so that they are exported to the rest of the application
 const env: EnvVariables = {
@@ -60,7 +62,8 @@ const env: EnvVariables = {
     GOOGLE_CLIENT_SECRET: GOOGLE_CLIENT_SECRET,
     GOOGLE_CALLBACK_URL: GOOGLE_CALLBACK_URL,
     SAFARICOM_CONSUMER_KEY: SAFARICOM_CONSUMER_KEY,
-    SAFARICOM_CONSUMER_SECRET: SAFARICOM_CONSUMER_SECRET
+    SAFARICOM_CONSUMER_SECRET: SAFARICOM_CONSUMER_SECRET,
+    SAFARICOM_LIPANAMPESA_CALLBACK: SAFARICOM_LIPANAMPESA_CALLBACK
 };
 
 const validateEnv = EnvVariableSchema.safeParse(env);

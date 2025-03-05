@@ -6,11 +6,13 @@ import { ValidationError, validationMessage } from '../errors';
 import {
     CallbackResponse,
     PaymentCallbackData,
+    paymentQuerySchema,
     paymentSchema,
     transactionIdQuery
 } from '../interfaces/payments';
 import env from '../env';
 import Mpesa from 'mpesa-node';
+import { JWTUserPayload } from '../interfaces';
 
 const router = Router();
 
@@ -18,9 +20,36 @@ async function fetchUserPayments(
     req: Request,
     res: Response,
     next: NextFunction
-) {
+): Promise<any> {
     try {
-    } catch (error) {}
+        const userId: string = (req.user as JWTUserPayload).id;
+        const isValid = paymentQuerySchema.safeParse(req.body);
+
+        if (!isValid.success) {
+            const error_formatted = isValid.error.format();
+            next(new ValidationError(validationMessage, error_formatted));
+        }
+
+        const { limit, offset, status } = req.body;
+
+        const userPayments = paymentRespository.getUserPayments(
+            userId,
+            limit,
+            offset,
+            status
+        );
+
+        return res
+            .status(200)
+            .json(
+                createSuccessResponse(
+                    'Sucesfully retreived user payments!',
+                    userPayments
+                )
+            );
+    } catch (error) {
+        return next(error);
+    }
 }
 
 async function processUserPayment(
@@ -50,7 +79,7 @@ async function processUserPayment(
         const res_mpesa = await mpesaApi.lipaNaMpesaOnline(
             phoneNumber,
             amount,
-            URL + '/lipanampesa/success',
+            env.SAFARICOM_LIPANAMPESA_CALLBACK,
             accountRef
         );
 
@@ -135,17 +164,18 @@ async function updatePaymentStatus(
         const callbackDataUpdate: PaymentCallbackData = {
             merchantRequestId: data.Body.stkCallback.MerchantRequestID,
             checkoutRequestId: data.Body.stkCallback.CheckoutRequestID,
+            resultDescription: data.Body.stkCallback.ResultDesc,
+            resultCode: String(data.Body.stkCallback.ResultCode),
             mpesaReceiptNumber,
             transactionDate,
             phoneNumber,
-            amount,
-            resultDescription: data.Body.stkCallback.ResultDesc,
-            resultCode: String(data.Body.stkCallback.ResultCode)
+            amount
         };
 
         const updatedPayment = await paymentRespository.updatePaymentStatus(
             callbackDataUpdate
         );
+
         return res
             .status(200)
             .json(createSuccessResponse('Callback processed', updatedPayment));

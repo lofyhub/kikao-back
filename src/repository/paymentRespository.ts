@@ -12,7 +12,6 @@ class PaymentRepository {
             .returning();
         return newPayment;
     }
-
     async getUserPayments(
         userId: string,
         limit: number = 10,

@@ -14,15 +14,17 @@ async function getListingAuthor(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { Id } = req.body;
-
-    const idValid = idSchema.safeParse(Id);
-
-    if (!idValid.success) {
-        const error_formatted = idValid.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
     try {
+        const { Id } = req.body;
+        const idValid = idSchema.safeParse(Id);
+
+        if (!idValid.success) {
+            const error_formatted = idValid.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const existingUser = await User.getUserById(Id);
 
         const res_body = createSuccessResponse('Successful', existingUser);
@@ -38,17 +40,17 @@ async function getUserListings(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { Id } = req.body;
-
-    const idValid = idSchema.safeParse(Id);
-
-    if (!idValid.success) {
-        const error_formatted = idValid.error.format();
-
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { Id } = req.body;
+        const idValid = idSchema.safeParse(Id);
+
+        if (!idValid.success) {
+            const error_formatted = idValid.error.format();
+
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
         const userListings = await Listing.getUserListings(Id);
 
         const userData: ResponseGetUser = {

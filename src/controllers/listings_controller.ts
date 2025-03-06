@@ -172,18 +172,20 @@ async function deleteListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listingId } = req.body;
-
-    const userId: string = (req.user as JWTUserPayload).id;
-
-    const listingValidation = listingIdSchema.safeParse(listingId);
-
-    if (!listingValidation.success) {
-        const error_formatted = listingValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { listingId } = req.body;
+
+        const userId: string = (req.user as JWTUserPayload).id;
+
+        const listingValidation = listingIdSchema.safeParse(listingId);
+
+        if (!listingValidation.success) {
+            const error_formatted = listingValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const listing_to_delete = await listingRepository.deleteListing(
             listingId,
             userId
@@ -207,92 +209,102 @@ async function updateListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const {
-        listingId,
-        name,
-        location,
-        status,
-        county,
-        yearBuilt,
-        description,
-        size,
-        ratesId,
-        price,
-        duration,
-        compartmentsId,
-        bedrooms,
-        totalRooms,
-        washRooms,
-        parking,
-        roomNumber,
-        security,
-        garbageCollection,
-        wifi
-    } = req.body;
-
-    const userId: string = (req.user as JWTUserPayload).id;
-
-    const listingIdValidation = listingIdSchema.safeParse(listingId);
-    const ratesIdValidation = ratesIdSchema.safeParse(ratesId);
-    const compartmentIdValidation = listingId.safeParse(compartmentsId);
-
-    if (!listingIdValidation.success) {
-        const error_formatted = listingIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    } else if (!ratesIdValidation.success) {
-        const error_formatted = ratesIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    } else if (!compartmentIdValidation.success) {
-        const error_formatted = compartmentIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
-    const updates: UpdateListing = {
-        name,
-        location,
-        status,
-        county,
-        yearBuilt,
-        description,
-        size,
-        ratesId,
-        price,
-        duration,
-        compartmentsId,
-        bedrooms,
-        totalRooms,
-        washRooms,
-        parking,
-        roomNumber,
-        security,
-        garbageCollection,
-        wifi
-    };
-
-    // Don't proceed if there are no updates to make
-    if (Object.keys(updates).length === 0) {
-        return res.status(400).json(createErrorResponse('No updates to make!'));
-    }
-
-    const updateValidation = updateListingSchema.safeParse(updates);
-
-    if (!updateValidation.success) {
-        const error_formatted = updateValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
-    const user_listing = await listingRepository.findListingById(listingId);
-
-    // Ensure user can only update their listing and not others!
-    if (user_listing.userId !== userId) {
-        return next(
-            new UnauthorizedError(
-                'You can only update listing that you have created!'
-            )
-        );
-    }
-
     try {
+        const {
+            listingId,
+            name,
+            location,
+            status,
+            county,
+            yearBuilt,
+            description,
+            size,
+            ratesId,
+            price,
+            duration,
+            compartmentsId,
+            bedrooms,
+            totalRooms,
+            washRooms,
+            parking,
+            roomNumber,
+            security,
+            garbageCollection,
+            wifi
+        } = req.body;
+
+        const userId: string = (req.user as JWTUserPayload).id;
+
+        const listingIdValidation = listingIdSchema.safeParse(listingId);
+        const ratesIdValidation = ratesIdSchema.safeParse(ratesId);
+        const compartmentIdValidation = listingId.safeParse(compartmentsId);
+
+        if (!listingIdValidation.success) {
+            const error_formatted = listingIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        } else if (!ratesIdValidation.success) {
+            const error_formatted = ratesIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        } else if (!compartmentIdValidation.success) {
+            const error_formatted = compartmentIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
+        const updates: UpdateListing = {
+            name,
+            location,
+            status,
+            county,
+            yearBuilt,
+            description,
+            size,
+            ratesId,
+            price,
+            duration,
+            compartmentsId,
+            bedrooms,
+            totalRooms,
+            washRooms,
+            parking,
+            roomNumber,
+            security,
+            garbageCollection,
+            wifi
+        };
+
+        // Don't proceed if there are no updates to make
+        if (Object.keys(updates).length === 0) {
+            return res
+                .status(400)
+                .json(createErrorResponse('No updates to make!'));
+        }
+
+        const updateValidation = updateListingSchema.safeParse(updates);
+
+        if (!updateValidation.success) {
+            const error_formatted = updateValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
+        const user_listing = await listingRepository.findListingById(listingId);
+
+        // Ensure user can only update their listing and not others!
+        if (user_listing.userId !== userId) {
+            return next(
+                new UnauthorizedError(
+                    'You can only update listing that you have created!'
+                )
+            );
+        }
+
         const result = await listingRepository.updateListing(
             listingId,
             userId,
@@ -339,16 +351,17 @@ async function getListing(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { Id } = req.body;
-
-    const idValidation = userIdSchema.safeParse(Id);
-
-    if (!idValidation.success) {
-        const error_formatted = idValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { Id } = req.body;
+        const idValidation = userIdSchema.safeParse(Id);
+
+        if (!idValidation.success) {
+            const error_formatted = idValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const listing = await listingRepository.findListingById(Id);
 
         return res
@@ -366,8 +379,8 @@ async function filterListings(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { filters }: { filters: Filters } = req.body;
     try {
+        const { filters }: { filters: Filters } = req.body;
         const filteredListings = listingRepository.filteredListing(filters);
 
         if (!filteredListings) {

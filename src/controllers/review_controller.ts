@@ -15,24 +15,23 @@ async function saveReview(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { rating, reviewText, listingId } = req.body;
-
-    const userId: string = (req.user as JWTUserPayload).id;
-    const validateReview = reviewSchema.safeParse(req.body);
-
-    if (!validateReview.success) {
-        const validateError = validateReview.error.format();
-        return next(new ValidationError(validationMessage, validateError));
-    }
-
-    const data: NewReview = {
-        userId,
-        reviewText,
-        rating,
-        listingId
-    };
-
     try {
+        const { rating, reviewText, listingId } = req.body;
+        const userId: string = (req.user as JWTUserPayload).id;
+        const validateReview = reviewSchema.safeParse(req.body);
+
+        if (!validateReview.success) {
+            const validateError = validateReview.error.format();
+            return next(new ValidationError(validationMessage, validateError));
+        }
+
+        const data: NewReview = {
+            userId,
+            reviewText,
+            rating,
+            listingId
+        };
+
         const savedReview = await reviewRepository.saveReview(data);
 
         return res
@@ -50,16 +49,15 @@ async function getListingReviews(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listingId } = req.body;
-
-    const validListingId = listingIdSchema.safeParse(listingId);
-
-    if (!validListingId.success) {
-        const validateError = validListingId.error.format();
-        return next(new ValidationError(validationMessage, validateError));
-    }
-
     try {
+        const { listingId } = req.body;
+        const validListingId = listingIdSchema.safeParse(listingId);
+
+        if (!validListingId.success) {
+            const validateError = validListingId.error.format();
+            return next(new ValidationError(validationMessage, validateError));
+        }
+
         const reviews = await reviewRepository.findReviewsByListingId(
             listingId
         );
@@ -79,17 +77,18 @@ async function deleteReview(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { reviewId } = req.body;
-
-    const userId: string = (req.user as JWTUserPayload).id;
-    const validReviewId = userIdSchema.safeParse(reviewId);
-
-    if (!validReviewId.success) {
-        const error_formatted = validReviewId.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { reviewId } = req.body;
+        const userId: string = (req.user as JWTUserPayload).id;
+        const validReviewId = userIdSchema.safeParse(reviewId);
+
+        if (!validReviewId.success) {
+            const error_formatted = validReviewId.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const savedReview = await reviewRepository.deleteReview(
             reviewId,
             userId

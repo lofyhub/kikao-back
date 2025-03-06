@@ -89,7 +89,7 @@ async function processUserPayment(
             .status(200)
             .json(
                 createSuccessResponse(
-                    'Successfully made the paymen!',
+                    'Successfully made the payment!',
                     savedPayment
                 )
             );

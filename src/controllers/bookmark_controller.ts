@@ -15,17 +15,18 @@ async function addBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listingId } = req.body;
-    const userId: string = (req.user as JWTUserPayload).id;
-
-    const listingIdValidation = listingIdSchema.safeParse(listingId);
-
-    if (!listingIdValidation.success) {
-        const error_formatted = listingIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { listingId } = req.body;
+        const userId: string = (req.user as JWTUserPayload).id;
+        const listingIdValidation = listingIdSchema.safeParse(listingId);
+
+        if (!listingIdValidation.success) {
+            const error_formatted = listingIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const data: NewBookmark = {
             userId,
             listingId
@@ -45,16 +46,17 @@ async function fetchUserBookmarks(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { userId } = req.body;
-
-    const userIdValidation = userIdSchema.safeParse(userId);
-
-    if (!userIdValidation.success) {
-        const error_formatted = userIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { userId } = req.body;
+        const userIdValidation = userIdSchema.safeParse(userId);
+
+        if (!userIdValidation.success) {
+            const error_formatted = userIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const bookmarks = await bookmarkRepository.findUserBookmarksById(
             userId
         );
@@ -77,16 +79,17 @@ async function fetchListingBookmarks(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { listingId } = req.body;
-
-    const listingIdValidation = listingIdSchema.safeParse(listingId);
-
-    if (!listingIdValidation.success) {
-        const error_formatted = listingIdValidation.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { listingId } = req.body;
+        const listingIdValidation = listingIdSchema.safeParse(listingId);
+
+        if (!listingIdValidation.success) {
+            const error_formatted = listingIdValidation.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const bookmarks = await bookmarkRepository.fetchListingBookmarks(
             listingId
         );
@@ -114,17 +117,18 @@ async function deleteBookmark(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const { bookmarkId } = req.body;
-    const userId: string = (req.user as JWTUserPayload).id;
-
-    const validBookmarkId = userIdSchema.safeParse(bookmarkId);
-
-    if (!validBookmarkId.success) {
-        const error_formatted = validBookmarkId.error.format();
-        return next(new ValidationError(validationMessage, error_formatted));
-    }
-
     try {
+        const { bookmarkId } = req.body;
+        const userId: string = (req.user as JWTUserPayload).id;
+        const validBookmarkId = userIdSchema.safeParse(bookmarkId);
+
+        if (!validBookmarkId.success) {
+            const error_formatted = validBookmarkId.error.format();
+            return next(
+                new ValidationError(validationMessage, error_formatted)
+            );
+        }
+
         const deleted_bookmark = await bookmarkRepository.deleteBookmark(
             bookmarkId,
             userId

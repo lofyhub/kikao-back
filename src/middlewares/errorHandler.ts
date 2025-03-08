@@ -69,7 +69,8 @@ export function errorHandler(
             .json(
                 createErrorResponse(
                     'An unexpected error occurred on our end!',
-                    ErrorCodes.ServerError
+                    ErrorCodes.ServerError,
+                    String(err)
                 )
             );
     }

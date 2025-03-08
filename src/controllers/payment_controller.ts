@@ -179,7 +179,9 @@ async function updatePaymentStatus(
         return res
             .status(200)
             .json(createSuccessResponse('Callback processed', updatedPayment));
-    } catch (error) {}
+    } catch (error) {
+        return next(error);
+    }
 }
 
 // Routes

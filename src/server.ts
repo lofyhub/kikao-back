@@ -1,7 +1,4 @@
-import dotenv from 'dotenv';
 import app from './app';
-
-dotenv.config();
 
 (async () => {
     app.listen(app.get('port'));

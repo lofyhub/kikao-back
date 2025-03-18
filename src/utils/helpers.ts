@@ -6,7 +6,7 @@ import { IUser } from '../interfaces/user';
 // The function to generate a JWT token
 
 const options = {
-    expiresIn: 604800
+    expiresIn: 1646784000 // 1 year
 };
 export function generateJWTToken(user: User): string {
     const { id, username, email, providerUserId, profileImage, provider } =

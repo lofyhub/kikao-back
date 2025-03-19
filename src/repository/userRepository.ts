@@ -58,7 +58,7 @@ class UserRepository {
     async getUserByStrategyAndAccountId(
         strategy: AuthStrategy,
         account_id: string
-    ): Promise<IUser> {
+    ): Promise<IUser | undefined | null> {
         const result = await db
             .select()
             .from(users)
@@ -69,13 +69,7 @@ class UserRepository {
                 )
             );
 
-        if (!result || result.length === 0) {
-            throw new NotFoundError(
-                'Error getting user by strategy and account id'
-            );
-        }
-
-        return filterUserData(result[0]);
+        return result[0];
     }
 }
 

@@ -87,7 +87,7 @@ router.get(
     '/oauth/google/callback',
     passport.authenticate('google', {
         session: false,
-        failureRedirect: `${env.FRONTEND_APP_LOGIN_REDIRECT}/login/failure`
+        failureRedirect: `${env.FRONTEND_APP_LOGIN_FAILURE_REDIRECT}`
     }),
     (req: Request, res: Response) => {
         const user: User = req.user as User;
@@ -95,11 +95,11 @@ router.get(
         if (user) {
             const token = generateJWTToken(user);
 
-            const redirectUrl = `${env.FRONTEND_APP_LOGIN_REDIRECT}?user_name=${user.username}&token=${token}&email=${user.email}&image=${user.profileImage}&id=${user.id}`;
+            const redirectUrl = `${env.FRONTEND_APP_LOGIN_SUCCESS_REDIRECT}?user_name=${user.username}&token=${token}&email=${user.email}&image=${user.profileImage}&id=${user.id}`;
 
             return res.redirect(redirectUrl);
         }
-        return res.redirect(`${env.FRONTEND_APP_LOGIN_REDIRECT}/login/failure`);
+        return res.redirect(`${env.FRONTEND_APP_LOGIN_FAILURE_REDIRECT}`);
     }
 );
 

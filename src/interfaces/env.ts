@@ -3,7 +3,9 @@ export interface EnvVariables {
     PORT: number;
     debug: boolean;
     IMAGE_UPLOAD_SIZE_LIMIT: number;
-    FRONTEND_APP_LOGIN_REDIRECT: string;
+
+    FRONTEND_APP_LOGIN_FAILURE_REDIRECT: string;
+    FRONTEND_APP_LOGIN_SUCCESS_REDIRECT: string;
     GOOGLE_APP_OAUTH_REDIRECT: string;
     TEST_MODE: boolean;
     OPENAI_API_KEY: string;
@@ -27,7 +29,8 @@ export const EnvVariableSchema = z.object({
     PORT: z.number(),
     debug: z.boolean(),
     IMAGE_UPLOAD_SIZE_LIMIT: z.number(),
-    FRONTEND_APP_LOGIN_REDIRECT: z.string().nonempty(),
+    FRONTEND_APP_LOGIN_FAILURE_REDIRECT: z.string().nonempty(),
+    FRONTEND_APP_LOGIN_SUCCESS_REDIRECT: z.string().nonempty(),
     GOOGLE_APP_OAUTH_REDIRECT: z.string().nonempty(),
     TEST_MODE: z.boolean(),
     OPENAI_API_KEY: z.string().nonempty(),

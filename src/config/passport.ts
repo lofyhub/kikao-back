@@ -77,9 +77,7 @@ async function verify(
             userProfile.id
         );
 
-        if (user_db) {
-            return done(null, user_db);
-        } else {
+        if (!user_db) {
             const newUser: NewUser = {
                 email: profile.emails[0].value,
                 username: profile.displayName,
@@ -94,19 +92,20 @@ async function verify(
                 businessCity: '',
                 providerPictureUrl: '',
                 isLinked: true,
-                gender: 'prefer not to say',
+                gender: 'non-binary',
                 businessLogo: ''
             };
 
             const created_user = await userRepository.createUser(newUser);
 
             if (created_user) {
-                console.log('Created new user:', created_user);
                 return done(null, created_user);
             } else {
                 return done(new Error('Error creating new user'), false);
             }
         }
+
+        return done(null, user_db);
     } catch (error) {
         return done(error, false);
     }

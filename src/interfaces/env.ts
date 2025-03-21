@@ -23,6 +23,7 @@ export interface EnvVariables {
     SAFARICOM_CONSUMER_KEY: string;
     SAFARICOM_CONSUMER_SECRET: string;
     SAFARICOM_LIPANAMPESA_CALLBACK: string;
+    KCB_ACCCESS_TOKEN: string;
 }
 
 export const EnvVariableSchema = z.object({
@@ -47,5 +48,6 @@ export const EnvVariableSchema = z.object({
     GOOGLE_CALLBACK_URL: z.string().nonempty(),
     SAFARICOM_CONSUMER_KEY: z.string().nonempty(),
     SAFARICOM_CONSUMER_SECRET: z.string().nonempty(),
-    SAFARICOM_LIPANAMPESA_CALLBACK: z.string().nonempty()
+    SAFARICOM_LIPANAMPESA_CALLBACK: z.string().nonempty(),
+    KCB_ACCCESS_TOKEN: z.string().nonempty()
 });
